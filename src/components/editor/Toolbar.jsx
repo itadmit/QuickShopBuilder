@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { 
   FiMonitor, 
@@ -11,11 +11,19 @@ import {
 } from 'react-icons/fi';
 import { HiOutlineDesktopComputer, HiOutlineDeviceMobile } from 'react-icons/hi';
 import { IoSparklesOutline } from 'react-icons/io5';
+import Swal from 'sweetalert2';
 
 const Toolbar = () => {
-  const { saveLayout, sections } = useEditor();
-  const [viewMode, setViewMode] = useState('desktop'); // desktop, tablet, mobile
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const { 
+    saveLayout, 
+    sections, 
+    viewMode, 
+    setViewMode,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useEditor();
 
   // פונקציה לשמירת הלייאאוט
   const handleSave = async () => {
@@ -41,64 +49,125 @@ const Toolbar = () => {
       
     } catch (error) {
       console.error('שגיאה בשמירה:', error);
-      alert('שגיאה בשמירת דף הבית');
+      Swal.fire({
+        title: 'שגיאה בשמירה',
+        text: error.message || 'אירעה שגיאה בשמירת דף הבית',
+        icon: 'error'
+      });
     }
   };
 
   // פונקציה לפתיחת תצוגה מקדימה
   const handlePreviewToggle = () => {
-    setIsPreviewMode(!isPreviewMode);
+    if (!sections || sections.length === 0) {
+      Swal.fire({
+        title: 'אין תוכן לתצוגה מקדימה',
+        text: 'הוסף רכיבים לפני הצגת תצוגה מקדימה',
+        icon: 'info'
+      });
+      return;
+    }
     
-    // בפרויקט אמיתי כאן אפשר לעבור למצב תצוגה מקדימה
-    if (!isPreviewMode) {
-      // פתיחת חלון תצוגה מקדימה
-      const previewWindow = window.open('', '_blank');
-      
-      // יצירת HTML בסיסי לתצוגה מקדימה (לדוגמה פשוטה)
-      const previewHtml = `
-        <!DOCTYPE html>
-        <html dir="rtl" lang="he">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>תצוגה מקדימה</title>
-          <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-          <style>
-            body { 
-              font-family: 'Noto Sans Hebrew', sans-serif; 
-              margin: 0; 
-              padding: 0; 
-              direction: rtl;
-            }
-            .section { 
-              margin-bottom: 0;
-              position: relative;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="preview-content">
-            ${sections.map(section => `
-              <div class="section ${section.type}">
-                <h2>${section.title || ''}</h2>
-                <p>${section.subtitle || ''}</p>
-                <!-- כאן ניתן להוסיף רינדור מותאם לפי סוג הסקשן -->
-              </div>
-            `).join('')}
+    // פתיחת חלון חדש לתצוגה מקדימה
+    const previewWindow = window.open('', '_blank');
+    
+    // בניית HTML מתוך מידע הסקשנים מהקונטקסט
+    let previewHTML = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="he">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>תצוגה מקדימה - ${window.STORE_SLUG || 'Quickshop'}</title>
+        
+        <!-- סגנונות הקיים באתר -->
+        <link rel="stylesheet" href="/site/css/styles.css">
+        <link rel="stylesheet" href="/site/css/theme.css">
+        
+        <!-- סגנונות נוספים -->
+        <style>
+          body { margin: 0; padding: 0; font-family: Assistant, sans-serif; }
+          /* שאר הסגנונות... */
+        </style>
+      </head>
+      <body>
+        <div class="preview-header">
+          <div>תצוגה מקדימה של דף הבית</div>
+          <div class="preview-actions">
+            <button class="device-button active" data-device="desktop">
+              <i class="fas fa-desktop"></i> מחשב
+            </button>
+            <button class="device-button" data-device="tablet">
+              <i class="fas fa-tablet-alt"></i> טאבלט
+            </button>
+            <button class="device-button" data-device="mobile">
+              <i class="fas fa-mobile-alt"></i> נייד
+            </button>
           </div>
-        </body>
-        </html>
-      `;
-      
-      previewWindow.document.write(previewHtml);
-      previewWindow.document.close();
+        </div>
+        
+        <div class="preview-body preview-desktop">
+    `;
+    
+    // הוספת תוכן הסקשנים מהסטייט, לא מה-DOM
+    sections.forEach(section => {
+      previewHTML += `<div class="section section-${section.type}">${renderSectionForPreview(section)}</div>`;
+    });
+    
+    // סגירת ה-HTML
+    previewHTML += `
+        </div>
+        
+        <script>
+          // סקריפט למעבר בין תצוגות מכשירים
+          document.querySelectorAll('.device-button').forEach(button => {
+            button.addEventListener('click', () => {
+              // הסרת active מכולם
+              document.querySelectorAll('.device-button').forEach(b => b.classList.remove('active'));
+              button.classList.add('active');
+              
+              // החלפת מחלקת התצוגה
+              const device = button.getAttribute('data-device');
+              const previewBody = document.querySelector('.preview-body');
+              previewBody.className = \`preview-body preview-\${device}\`;
+            });
+          });
+        </script>
+      </body>
+      </html>
+    `;
+    
+    // כתיבת ה-HTML לחלון החדש
+    previewWindow.document.write(previewHTML);
+    previewWindow.document.close();
+  };
+
+  // פונקציה שתחזיר את ה-HTML של הסקשן לתצוגה מקדימה
+  const renderSectionForPreview = (section) => {
+    // כאן צריך לוגיקה מותאמת להחזרת HTML לפי סוג הסקשן
+    // לדוגמה פשוטה:
+    switch(section.type) {
+      case 'hero':
+        return `
+          <div class="hero-section" style="background-image: url(${section.backgroundImage})">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <h1>${section.title}</h1>
+              <p>${section.subtitle}</p>
+              <a href="${section.buttonLink}" class="hero-button">${section.buttonText}</a>
+            </div>
+          </div>
+        `;
+      // לוגיקה לסוגי סקשנים נוספים...
+      default:
+        return `<div>סקשן מסוג ${section.type}</div>`;
     }
   };
 
-  // החלפת מצבי תצוגה (דסקטופ, טאבלט, מובייל)
-  const changeViewMode = (mode) => {
+  // פונקציה להחלפת מצב תצוגה
+  const handleViewModeChange = (mode) => {
+    // עדכון הערך בקונטקסט, לא רק בסטייט מקומי
     setViewMode(mode);
-    // בפרויקט אמיתי, כאן אפשר לשנות את התצוגה בהתאם לרוחב המסך
   };
 
   return (
@@ -111,21 +180,21 @@ const Toolbar = () => {
       <div className="view-modes">
         <button 
           className={`button-icon ${viewMode === 'desktop' ? 'active' : ''}`}
-          onClick={() => changeViewMode('desktop')}
+          onClick={() => handleViewModeChange('desktop')}
           title="תצוגת מחשב"
         >
           <HiOutlineDesktopComputer />
         </button>
         <button 
           className={`button-icon ${viewMode === 'tablet' ? 'active' : ''}`}
-          onClick={() => changeViewMode('tablet')}
+          onClick={() => handleViewModeChange('tablet')}
           title="תצוגת טאבלט"
         >
           <FiTablet />
         </button>
         <button 
           className={`button-icon ${viewMode === 'mobile' ? 'active' : ''}`}
-          onClick={() => changeViewMode('mobile')}
+          onClick={() => handleViewModeChange('mobile')}
           title="תצוגת מובייל"
         >
           <HiOutlineDeviceMobile />
@@ -135,14 +204,16 @@ const Toolbar = () => {
       <div className="editor-actions">
         <button 
           className="button-icon"
-          onClick={() => console.log('ביטול פעולה אחרונה')}
+          onClick={undo}
+          disabled={!canUndo}
           title="בטל"
         >
           <FiRotateCcw />
         </button>
         <button 
           className="button-icon"
-          onClick={() => console.log('חזרה על פעולה אחרונה')}
+          onClick={redo}
+          disabled={!canRedo}
           title="בצע שוב"
         >
           <FiRotateCw />

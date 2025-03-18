@@ -1,47 +1,76 @@
+// בקובץ Editor.jsx
 import React, { useEffect } from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
 import { useEditor } from '../../contexts/EditorContext';
-import Sidebar from './Sidebar';
-import Canvas from './Canvas';
-import PropertyPanel from './PropertyPanel';
+// ייבוא כל הסקשנים
+import HeroSection from '../sections/HeroSection';
+import BannerSection from '../sections/BannerSection';
+import TextWithImageSection from '../sections/TextWithImageSection';
+import TestimonialsSection from '../sections/TestimonialsSection';
+import ProductsSection from '../sections/ProductsSection';
+import CollectionListSection from '../sections/CollectionListSection';
+import NewsletterSection from '../sections/NewsletterSection';
+
+// ייבוא רכיבי הממשק
 import Toolbar from './Toolbar';
-import '../../styles/modern-editor.css';
+import Sidebar from './Sidebar';
+import PropertyPanel from './PropertyPanel';
 
 const Editor = () => {
   const { 
-    reorderSections, 
-    setIsDragging, 
-    loadLayout, 
-    setDraggedItem 
+    sections, 
+    loadLayout,
+    addSection,
+    reorderSections,
+    selectedSectionId,
+    setSelectedSectionId
   } = useEditor();
 
   // טעינת הלייאאוט בטעינה הראשונית
   useEffect(() => {
-    // ניסיון לטעון לייאאוט שמור
+    console.log("Editor mounted, loading layout");
     loadLayout();
   }, [loadLayout]);
 
-  // טיפול בסיום גרירה
-  const handleDragEnd = (result) => {
-    setIsDragging(false);
-    
-    // איפוס פריט הגרירה מהסיידבר (אם יש)
-    setDraggedItem(null);
-    
-    // אם אין יעד, לא עושים כלום
-    if (!result.destination) {
-      return;
-    }
-    
-    // גרירה של סקשנים קיימים
-    if (result.type === 'SECTIONS') {
-      reorderSections(result.source.index, result.destination.index);
+  // פונקציה לרנדור סקשן לפי סוג
+  const renderSection = (section) => {
+    switch (section.type) {
+      case 'hero':
+        return <HeroSection data={section} />;
+      case 'banner':
+        return <BannerSection data={section} />;
+      case 'text-image':
+        return <TextWithImageSection data={section} />;
+      case 'testimonials':
+        return <TestimonialsSection data={section} />;
+      case 'products':
+        return <ProductsSection data={section} />;
+      case 'collections':
+        return <CollectionListSection data={section} />;
+      case 'newsletter':
+        return <NewsletterSection data={section} />;
+      default:
+        return <div>סוג סקשן לא מוכר: {section.type}</div>;
     }
   };
 
-  // טיפול בתחילת גרירה
-  const handleDragStart = () => {
-    setIsDragging(true);
+  // פונקציות גרירה HTML5 native
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data && data.type) {
+        // מוסיף את הסקשן בסוף הרשימה
+        addSection(data.type, sections.length);
+      }
+    } catch (error) {
+      console.error('Error processing drop:', error);
+    }
   };
 
   return (
@@ -49,21 +78,42 @@ const Editor = () => {
       {/* סרגל כלים עליון */}
       <Toolbar />
       
-      {/* אזור העבודה הראשי */}
       <div className="editor-workspace">
-        <DragDropContext
-          onDragEnd={handleDragEnd}
-          onDragStart={handleDragStart}
-        >
-          {/* תפריט צד */}
-          <Sidebar />
-          
-          {/* אזור העריכה המרכזי */}
-          <Canvas />
-          
-          {/* פאנל תכונות */}
-          <PropertyPanel />
-        </DragDropContext>
+        {/* סיידבר */}
+        <Sidebar />
+        
+        {/* אזור הקנבס המרכזי */}
+        <div className="canvas">
+          <div 
+            className="canvas-area"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {sections.map((section, index) => (
+              <div
+                key={section.id}
+                className={`canvas-section ${selectedSectionId === section.id ? 'selected' : ''}`}
+                onClick={() => setSelectedSectionId(section.id)}
+              >
+                <div className="section-handle">
+                  <i className="drag-icon"></i>
+                </div>
+                <div className="section-content">
+                  {renderSection(section)}
+                </div>
+              </div>
+            ))}
+            
+            {sections.length === 0 && (
+              <div className="empty-canvas">
+                <p>גרור רכיבים לכאן כדי ליצור את דף הבית שלך</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* פאנל מאפיינים */}
+        <PropertyPanel />
       </div>
     </div>
   );

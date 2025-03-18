@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+// בקובץ EditorContext.jsx
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import mockData from '../mock-data/homepage-data.json';
 
 // יצירת קונטקסט
@@ -8,6 +9,34 @@ const EditorContext = createContext();
 export function useEditor() {
   return useContext(EditorContext);
 }
+
+// הגדרת סקשנים ברירת מחדל
+const defaultSections = [
+  {
+    id: 'section-1',
+    type: 'hero',
+    title: 'ברוכים הבאים לחנות שלנו',
+    subtitle: 'מוצרים באיכות גבוהה במחירים תחרותיים',
+    buttonText: 'לקנייה',
+    buttonLink: '/collections/all',
+    backgroundImage: '/images/placeholders/hero-bg.jpg'
+  },
+  {
+    id: 'section-2',
+    type: 'products',
+    title: 'מוצרים מובחרים',
+    products: [],
+    count: 4
+  },
+  {
+    id: 'section-3',
+    type: 'text-image',
+    title: 'על החנות שלנו',
+    content: 'אנחנו חנות מקוונת המציעה מגוון רחב של מוצרים באיכות גבוהה. המטרה שלנו היא לספק ללקוחותינו את המוצרים הטובים ביותר במחירים הוגנים ועם שירות לקוחות מצוין.',
+    image: '/images/placeholders/about-img.jpg',
+    imagePosition: 'right'
+  }
+];
 
 // ספק הקונטקסט
 export function EditorProvider({ children }) {
@@ -29,10 +58,39 @@ export function EditorProvider({ children }) {
   // נתוני הגרירה הנוכחית
   const [draggedItem, setDraggedItem] = useState(null);
 
+  // היסטוריית שינויים
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isUndoRedo, setIsUndoRedo] = useState(false);
+
   // הסקשן הנבחר הנוכחי
   const selectedSection = selectedSectionId 
     ? sections.find(section => section.id === selectedSectionId) 
     : null;
+
+  // כאשר יש שינוי בסקשנים, עדכון ההיסטוריה
+  useEffect(() => {
+    // אם השינוי נובע מפעולת undo/redo, לא נוסיף להיסטוריה
+    if (isUndoRedo) {
+      setIsUndoRedo(false);
+      return;
+    }
+    
+    // אם אין סקשנים, לא נוסיף להיסטוריה
+    if (sections.length === 0) return;
+    
+    // שמירת המצב הנוכחי בהיסטוריה
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(JSON.stringify(sections));
+    
+    // הגבלת גודל ההיסטוריה ל-50 פעולות
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    }
+    
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  }, [sections]);
 
   // פונקציה להוספת סקשן חדש
   const addSection = useCallback((sectionType, position = sections.length) => {
@@ -57,7 +115,7 @@ export function EditorProvider({ children }) {
     const id = `section-${Date.now()}`;
     
     // תבניות ברירת מחדל לפי סוג הסקשן
-    const defaultSections = {
+    const defaultTypeSections = {
       hero: {
         id,
         type: 'hero',
@@ -118,7 +176,7 @@ export function EditorProvider({ children }) {
       },
     };
 
-    return defaultSections[sectionType] || defaultSections['text-image'];
+    return defaultTypeSections[sectionType] || defaultTypeSections['text-image'];
   };
 
   // פונקציה לעדכון סקשן קיים
@@ -162,77 +220,113 @@ export function EditorProvider({ children }) {
     }
   }, [draggedItem, addSection]);
 
-  // שמירת המבנה הנוכחי (לוקאלי או לשרת בעתיד)
-  const saveLayout = useCallback(() => {
-    setIsLoading(true);
-    
-    // כאן בעתיד תהיה שמירה לשרת
-    // כרגע שומר ב-localStorage כדמה
-    return new Promise((resolve, reject) => {
-      try {
-        localStorage.setItem('quickshop-homepage-layout', JSON.stringify(sections));
-        
-        setTimeout(() => {
-          setIsLoading(false);
-          resolve(sections);
-        }, 800);
-      } catch (error) {
-        setIsLoading(false);
-        reject(error);
-      }
-    });
-  }, [sections]);
+  // פונקציית Undo
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      setIsUndoRedo(true);
+      setHistoryIndex(historyIndex - 1);
+      setSections(JSON.parse(history[historyIndex - 1]));
+    }
+  }, [history, historyIndex]);
+  
+  // פונקציית Redo
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setIsUndoRedo(true);
+      setHistoryIndex(historyIndex + 1);
+      setSections(JSON.parse(history[historyIndex + 1]));
+    }
+  }, [history, historyIndex]);
 
-  // טעינת מבנה שמור
-  const loadLayout = useCallback(() => {
+  // שמירת המבנה הנוכחי (לוקאלי או לשרת בעתיד)
+  const saveLayout = useCallback(async () => {
     setIsLoading(true);
     
     try {
-      // ניסיון לטעון מ-localStorage
+      // ארגון המידע בפורמט JSON לשמירה בטבלה
+      const layoutData = {
+        store_id: window.STORE_ID,
+        structure: sections.map(section => ({
+          id: section.id,
+          type: section.type,
+          data: { ...section }
+        }))
+      };
+      
+      // שליחת המידע לשרת
+      const response = await fetch('/editor/save.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(layoutData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'שגיאה בשמירת המבנה');
+      }
+      
+      // שמירה גם ב-localStorage כגיבוי
+      localStorage.setItem('quickshop-homepage-layout', JSON.stringify(sections));
+      
+      setIsLoading(false);
+      return { success: true };
+    } catch (error) {
+      console.error('Error saving layout:', error);
+      setIsLoading(false);
+      throw error;
+    }
+  }, [sections]);
+
+
+  const loadLayout = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      // קודם מנסים לטעון מהשרת
+      const response = await fetch(`/editor/load.php?store_id=${window.STORE_ID}`);
+      
+      let data;
+      // בדיקה שהתשובה היא JSON תקין
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+        
+        if (data.success && data.structure && data.structure.length > 0) {
+          const parsedSections = data.structure.map(item => ({
+            ...item.data,
+            id: item.id || `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: item.type
+          }));
+          
+          setSections(parsedSections);
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        console.warn("Server did not return JSON. Falling back to local storage.");
+      }
+      
+      // אם לא הצלחנו לטעון מהשרת, ננסה מ-localStorage
       const savedLayout = localStorage.getItem('quickshop-homepage-layout');
       
       if (savedLayout) {
-        const parsedLayout = JSON.parse(savedLayout);
-        setSections(parsedLayout);
+        setSections(JSON.parse(savedLayout));
       } else {
-        // אם אין מבנה שמור, השתמש בנתוני דמה
-        setSections(mockData.sections || []);
+        // אם אין מבנה שמור, נשתמש במבנה ברירת מחדל
+        setSections(mockData.sections || defaultSections);
       }
     } catch (error) {
-      console.error('Error loading layout', error);
-      // במקרה של שגיאה, השתמש בנתוני דמה
-      setSections(mockData.sections || []);
+      console.error('Error loading layout:', error);
+      // במקרה של שגיאה בטעינה, משתמשים במבנה ברירת מחדל
+      setSections(mockData.sections || defaultSections);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
-  // שכפול סקשן קיים
-  const duplicateSection = useCallback((sectionId) => {
-    const sectionToDuplicate = sections.find(section => section.id === sectionId);
-    
-    if (!sectionToDuplicate) return;
-    
-    // יצירת עותק עם מזהה חדש
-    const duplicatedSection = {
-      ...sectionToDuplicate,
-      id: `section-${Date.now()}`
-    };
-    
-    // מציאת המיקום של הסקשן המקורי
-    const originalIndex = sections.findIndex(section => section.id === sectionId);
-    
-    // הוספת העותק אחרי המקור
-    const newSections = [...sections];
-    newSections.splice(originalIndex + 1, 0, duplicatedSection);
-    
-    setSections(newSections);
-    
-    // בחירת הסקשן החדש
-    setSelectedSectionId(duplicatedSection.id);
-    
-    return duplicatedSection.id;
-  }, [sections]);
+  // עדכון האם יש אפשרות undo/redo
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
 
   // הערכים שיהיו זמינים לקומפוננטות שמשתמשות בקונטקסט
   const value = {
@@ -243,6 +337,8 @@ export function EditorProvider({ children }) {
     viewMode,
     isLoading,
     draggedItem,
+    canUndo,
+    canRedo,
     setSelectedSectionId,
     setIsDragging,
     setViewMode,
@@ -253,7 +349,8 @@ export function EditorProvider({ children }) {
     reorderSections,
     saveLayout,
     loadLayout,
-    duplicateSection,
+    undo,
+    redo,
     handleSidebarDragStart,
     handleSidebarDrop
   };
