@@ -2717,3 +2717,1487 @@ input:checked + .switch-slider:before {
     justify-content: flex-end;
   }
 }
+
+
+.component-item {
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: grab;
+}
+
+.component-item.dragging {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  cursor: grabbing;
+}
+
+.drag-hint {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  right: 0;
+  background: rgba(117, 54, 255, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  animation: float 1.5s infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
+.drop-zone {
+  height: 60px;
+  margin: 15px 0;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background-color: rgba(117, 54, 255, 0.05);
+  opacity: 0.7;
+}
+
+.drop-zone:hover, .drop-zone.active {
+  border-color: var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.1);
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.drop-zone.active {
+  height: 80px;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { background-color: rgba(117, 54, 255, 0.1); }
+  100% { background-color: rgba(117, 54, 255, 0.2); }
+}
+
+.drop-zone-label {
+  font-weight: 500;
+  color: var(--primary-color);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.canvas.drag-over {
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+.empty-canvas.drop-highlight {
+  border: 2px dashed var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.1);
+  animation: pulse 1s infinite alternate;
+}
+
+.drop-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-icon {
+  font-size: 36px;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+/* הנפשות בזמן גרירה */
+.ghost-widget {
+  background-color: rgba(117, 54, 255, 0.1);
+  border: 2px dashed var(--primary-color);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  z-index: 1000;
+  padding: 15px;
+  min-width: 150px;
+  min-height: 80px;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* חיווי ויזואלי למיקום רכיב בתוך הקנבס */
+.drop-indicator {
+  height: 4px;
+  background-color: var(--primary-color);
+  margin: 0;
+  animation: flash 1s infinite alternate;
+  border-radius: 2px;
+}
+
+@keyframes flash {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* עיצוב רכיב בזמן גרירה בתוך הקנבס */
+.canvas-section.dragging {
+  opacity: 0.6;
+  transform: scale(1.01);
+  outline: 2px dashed var(--primary-color);
+  pointer-events: none;
+}
+
+/* סגנונות משופרים עבור React DnD */
+
+/* == תצוגת גרירה == */
+.drag-preview {
+  padding: 10px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.preview-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-badge:before {
+  content: "↕";
+  font-size: 18px;
+}
+
+/* == אזורי שחרור == */
+.drop-area {
+  height: 30px;
+  margin: 2px 0;
+  border-radius: var(--radius-md);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.drop-area.active {
+  height: 60px;
+  background-color: rgba(117, 54, 255, 0.1);
+  border: 2px dashed var(--primary-color);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { background-color: rgba(117, 54, 255, 0.1); }
+  100% { background-color: rgba(117, 54, 255, 0.2); }
+}
+
+.drop-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.drop-area:hover .drop-indicator {
+  opacity: 0.6;
+}
+
+.drop-indicator.visible {
+  opacity: 1;
+}
+
+.drop-area.active .drop-indicator {
+  opacity: 1;
+}
+
+.drop-indicator svg {
+  width: 28px;
+  height: 28px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  padding: 6px;
+}
+
+.drop-text {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* == רכיבים בעת גרירה == */
+.canvas-section.drop-target {
+  border: 2px dashed var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+.canvas-section.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(117, 54, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  border-radius: var(--radius-md);
+  z-index: 5;
+}
+
+.drag-message {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* == אזור הקנבס == */
+.canvas.drag-over {
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+.empty-canvas.highlight {
+  border-color: var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.1);
+}
+
+/* == רכיבים בסיידבר == */
+.component-item .drag-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 4px;
+  font-size: 11px;
+  text-align: center;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.component-item:hover .drag-hint {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.component-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  background-color: rgba(117, 54, 255, 0.1);
+  border: 2px dashed var(--primary-color);
+}
+
+/* == שכבת גרירה == */
+.drag-layer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* == מעברים חלקים == */
+.sections-container {
+  transition: padding 0.3s ease;
+}
+
+.sections-container:has(.canvas-section.dragging) {
+  padding: 20px 0;
+}
+
+/* == עזרי גרירה == */
+.drag-helper {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drag-helper-icon {
+  font-size: 18px;
+}
+
+/* == הנפשות חלקות == */
+/* אנימציה של רכיב שמוזז */
+@keyframes moveAnimation {
+  0% { transform: translateY(0); background-color: rgba(117, 54, 255, 0.05); }
+  50% { transform: translateY(-5px); background-color: rgba(117, 54, 255, 0.1); }
+  100% { transform: translateY(0); background-color: rgba(117, 54, 255, 0.05); }
+}
+
+.canvas-section.moved {
+  animation: moveAnimation 0.5s ease-in-out;
+}
+
+/* == סגנונות גרירה ושחרור (להוסיף לקובץ modern-editor.css) == */
+
+/* אזורי שחרור */
+.drop-zone {
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone.visible {
+  height: 60px;
+  margin: 10px 0;
+  opacity: 1;
+  border-color: var(--border-color);
+  background-color: rgba(117, 54, 255, 0.03);
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  background-color: rgba(117, 54, 255, 0.08);
+  border-color: var(--primary-color);
+}
+
+.drop-zone.active {
+  background-color: rgba(117, 54, 255, 0.15);
+  border-color: var(--primary-color);
+  height: 70px;
+  box-shadow: 0 0 0 4px rgba(117, 54, 255, 0.1);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { background-color: rgba(117, 54, 255, 0.1); }
+  100% { background-color: rgba(117, 54, 255, 0.2); }
+}
+
+.drop-zone-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.drop-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+}
+
+/* חיווי גרירה בסקשן */
+.canvas-section {
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+.canvas-section.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--primary-color);
+  transform: scale(0.98);
+  box-shadow: none !important;
+}
+
+.canvas-section .section-handle {
+  cursor: grab;
+}
+
+.canvas-section.dragging .section-handle {
+  cursor: grabbing;
+}
+
+.drag-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(117, 54, 255, 0.9);
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.drag-hint.visible {
+  opacity: 1;
+}
+
+/* חיווי גרירה בקנבס */
+.canvas.drag-over {
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+.empty-canvas {
+  transition: all 0.3s ease;
+}
+
+.empty-canvas.highlight {
+  border-color: var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.1);
+}
+
+/* תצוגת גרירה מותאמת אישית */
+.drag-image {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* טוסט הודעות */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: var(--dark-text);
+  color: white;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.toast-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-message.success {
+  background-color: var(--success-color);
+}
+
+.toast-message.error {
+  background-color: #e74c3c;
+}
+
+/* אנימציית הזזה */
+@keyframes moveAnimation {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+.canvas-section.moving {
+  animation: moveAnimation 0.5s ease;
+}
+
+/* שיפור חוויית גרירה כללית */
+[draggable] {
+  cursor: grab;
+}
+
+[draggable]:active {
+  cursor: grabbing;
+}
+
+/* === סגנונות לגרירה (להוסיף לקובץ modern-editor.css) === */
+
+/* אזורי שחרור */
+.drop-zone {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 2px dashed transparent;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 5px 0;
+  pointer-events: none;
+}
+
+.drop-zone.visible {
+  height: 60px;
+  opacity: 1;
+  border-color: var(--border-color);
+  background-color: rgba(117, 54, 255, 0.03);
+  pointer-events: all;
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  background-color: rgba(117, 54, 255, 0.08);
+  border-color: var(--primary-color);
+}
+
+.drop-zone.active {
+  background-color: rgba(117, 54, 255, 0.15);
+  border-color: var(--primary-color);
+  height: 70px;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { background-color: rgba(117, 54, 255, 0.1); }
+  100% { background-color: rgba(117, 54, 255, 0.2); }
+}
+
+.drop-zone-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.drop-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+}
+
+/* רכיבים בסיידבר */
+.component-item {
+  position: relative;
+  overflow: hidden;
+  cursor: grab !important;
+}
+
+.drag-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 12px;
+  padding: 4px;
+  transform: translateY(100%);
+  transition: transform 0.2s ease;
+  text-align: center;
+}
+
+.component-item:hover .drag-hint {
+  transform: translateY(0);
+}
+
+/* אלמנט גרירה */
+.drag-image {
+  position: absolute;
+  top: -9999px;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+}
+
+.drag-ghost-inner {
+  padding: 10px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.section-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+}
+
+.section-drag-ghost-inner {
+  padding: 10px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.section-drag-ghost-inner:before {
+  content: '↕';
+  font-size: 18px;
+  margin-left: 8px;
+}
+
+/* חיווי גרירה בסקשן */
+.canvas-section {
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.canvas-section.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--primary-color);
+  transform: scale(0.98);
+  box-shadow: none !important;
+}
+
+.canvas-section .section-handle {
+  cursor: grab;
+}
+
+.canvas-section.dragging .section-handle {
+  cursor: grabbing;
+}
+
+.drag-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(117, 54, 255, 0.9);
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 100;
+}
+
+.drag-hint.visible {
+  opacity: 1;
+}
+
+/* חיווי גרירה בקנבס */
+.canvas.drag-over {
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+.empty-canvas {
+  transition: all 0.2s ease;
+}
+
+/* הודעות טוסט */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: var(--dark-text);
+  color: white;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.toast-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-message.success {
+  background-color: var(--success-color);
+}
+
+.toast-message.error {
+  background-color: #e74c3c;
+}
+
+/* אנימציית הזזה */
+@keyframes moveAnimation {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+.canvas-section.moving {
+  animation: moveAnimation 0.5s ease;
+}
+
+/* שיפור חוויית גרירה כללית */
+[draggable] {
+  cursor: grab;
+}
+
+[draggable]:active {
+  cursor: grabbing;
+}
+
+/* עיצוב סיידבר לגרירה */
+.sidebar-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--dark-text);
+}
+
+.sidebar-helper-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--light-text);
+}
+
+/* תיקון בעיית הסתרה של הדראג הינט */
+.component-item .drag-hint {
+  z-index: 10;
+  font-weight: 500;
+}
+
+/* סגנון לקנבס כאשר הוא ריק */
+.empty-canvas-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.empty-canvas-content h3 {
+  margin: 15px 0 8px;
+  color: var(--dark-text);
+}
+
+.empty-canvas-content p {
+  margin: 0;
+  color: var(--light-text);
+  max-width: 400px;
+}
+
+/* סגנון למצבי תצוגה שונים */
+@media (max-width: 992px) {
+  .components-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* יש להוסיף את הסגנונות הבאים לקובץ modern-editor.css */
+
+/* === סגנונות לרכיבי React DnD === */
+
+/* סימוני אזורי שחרור */
+.drop-indicator-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--primary-color);
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(117, 54, 255, 0.5);
+  animation: pulse-line 1s infinite alternate;
+}
+
+.drop-indicator-line.top {
+  top: -2px;
+}
+
+.drop-indicator-line.bottom {
+  bottom: -2px;
+}
+
+@keyframes pulse-line {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* אזור שחרור עליון */
+.top-drop-area {
+  height: 20px;
+  margin-bottom: 15px;
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+  position: relative;
+  opacity: 0.3;
+}
+
+.top-drop-area.active {
+  height: 40px;
+  background-color: rgba(117, 54, 255, 0.15);
+  border: 2px dashed var(--primary-color);
+  opacity: 1;
+}
+
+.top-drop-area .drop-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.top-drop-area.active .drop-indicator {
+  opacity: 1;
+}
+
+/* רכיב בסיידבר בעת גרירה */
+.component-item.dragging {
+  opacity: 0.4;
+  background-color: rgba(117, 54, 255, 0.1);
+  border-color: var(--primary-color);
+}
+
+/* סקשן בעת גרירה */
+.canvas-section.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--primary-color);
+  transform: scale(0.98);
+  box-shadow: none !important;
+}
+
+/* סקשן במצב הרחפה (כאשר גוררים מעליו) */
+.canvas-section.hover-active {
+  background-color: rgba(117, 54, 255, 0.05);
+  box-shadow: 0 0 0 2px rgba(117, 54, 255, 0.3);
+}
+
+/* קנבס במצב הרחפה */
+.canvas.drag-over {
+  background-color: rgba(117, 54, 255, 0.05);
+}
+
+/* קנבס ריק במצב הרחפה */
+.empty-canvas.highlight {
+  border-color: var(--primary-color);
+  background-color: rgba(117, 54, 255, 0.1);
+}
+
+/* שכבת גרירה */
+.drag-layer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* תצוגה מקדימה בעת גרירה */
+.drag-preview {
+  pointer-events: none;
+  transition: transform 0.1s ease;
+}
+
+.drag-preview-component,
+.drag-preview-section {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-icon {
+  font-size: 16px;
+}
+
+/* כיסוי בעת גרירת סקשן */
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.drag-message {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ידית הגרירה של הסקשן */
+.section-handle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 10;
+  color: var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.canvas-section:hover .section-handle {
+  opacity: 1;
+}
+
+.section-handle:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.canvas-section.dragging .section-handle {
+  cursor: grabbing;
+}
+
+/* שיפור נראות ה-drag hint */
+.drag-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 4px;
+  font-size: 12px;
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  opacity: 0;
+  z-index: 5;
+}
+
+
+/* סגנונות משופרים לאזורי שחרור בין הווידג'טים */
+
+/* אזורי שחרור (drop zones) - עיצוב משופר וברור יותר */
+.drop-zone {
+  height: 40px; /* גובה קטן יותר לאזורי שחרור */
+  margin: 8px 0;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--light-text);
+  background-color: rgba(117, 54, 255, 0.03);
+  transition: all 0.2s ease;
+}
+
+.drop-zone:hover, .drop-zone.active {
+  height: 60px; /* מתרחב בעת hover או כשפעיל */
+  background-color: rgba(117, 54, 255, 0.08);
+  border-color: var(--primary-color);
+  border-width: 3px;
+}
+
+.drop-zone-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.drop-zone:hover .drop-zone-label, .drop-zone.active .drop-zone-label {
+  opacity: 1;
+  font-size: 14px;
+}
+
+.drop-zone-label:before {
+  content: '↓';
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  margin-left: 10px;
+  font-size: 16px;
+  text-align: center;
+  line-height: 24px;
+}
+
+/* סגנון לסקשן בזמן גרירה */
+.canvas-section.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  outline: 2px dashed var(--primary-color);
+  pointer-events: none;
+}
+
+/* שיפור ידית הגרירה של ווידג'ט קיים */
+.section-handle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 34px;
+  height: 34px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--primary-color);
+  opacity: 0.7;
+  z-index: 10;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.canvas-section:hover .section-handle {
+  opacity: 1;
+}
+
+.section-handle:hover {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 3px 6px rgba(117, 54, 255, 0.2);
+}
+
+.section-handle:active {
+  cursor: grabbing;
+}
+
+.drag-icon {
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='8' y1='6' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='12' x2='16' y2='12'%3E%3C/line%3E%3Cline x1='8' y1='18' x2='16' y2='18'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  display: block;
+}
+
+/* אנימציה לאזור שחרור פעיל */
+@keyframes pulse-border {
+  0% {
+    border-color: var(--primary-color);
+    background-color: rgba(117, 54, 255, 0.05);
+  }
+  50% {
+    border-color: #8154ff;
+    background-color: rgba(117, 54, 255, 0.12);
+  }
+  100% {
+    border-color: var(--primary-color);
+    background-color: rgba(117, 54, 255, 0.05);
+  }
+}
+
+.drop-zone.active {
+  animation: pulse-border 1.5s infinite;
+}
+
+/* סגנון לאזור הקנבס בזמן גרירה */
+.canvas-area.drag-over {
+  background-color: rgba(117, 54, 255, 0.02);
+  outline: 2px dashed rgba(117, 54, 255, 0.2);
+}
+
+/* שיפור המשוב הויזואלי לפריט שנבחר בקנבס */
+.canvas-section.selected {
+  box-shadow: 0 0 0 2px var(--primary-color), 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* מצב קנבס ריק - משוב ויזואלי משופר */
+.empty-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: rgba(117, 54, 255, 0.02);
+  transition: all 0.3s ease;
+  padding: 30px;
+}
+
+.empty-canvas:hover {
+  background-color: rgba(117, 54, 255, 0.05);
+  border-color: var(--primary-color);
+  transform: scale(1.01);
+}
+
+.empty-canvas p {
+  font-size: 16px;
+  color: var(--light-text);
+  margin-bottom: 15px;
+}
+
+/* CSS לשיפור חווית הגרירה - הוסף לקובץ הסגנונות שלך */
+
+/* אזורי שחרור בגרירה */
+.drop-zone {
+  height: 36px;
+  margin: 8px 0;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--light-text);
+  background-color: rgba(117, 54, 255, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 5;
+}
+
+.drop-zone:hover, .drop-zone.active {
+  height: 50px;
+  background-color: rgba(117, 54, 255, 0.08);
+  border-color: var(--primary-color);
+  border-width: 2px;
+}
+
+.drop-zone-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+}
+
+.drop-zone:hover .drop-zone-label, .drop-zone.active .drop-zone-label {
+  opacity: 1;
+  font-size: 14px;
+}
+
+.drop-zone-label:before {
+  content: '↓';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  margin-left: 8px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 22px;
+}
+
+/* אנימציה לאזור שחרור פעיל */
+@keyframes pulse-border {
+  0% {
+    border-color: var(--primary-color);
+    background-color: rgba(117, 54, 255, 0.05);
+  }
+  50% {
+    border-color: #8154ff;
+    background-color: rgba(117, 54, 255, 0.12);
+  }
+  100% {
+    border-color: var(--primary-color);
+    background-color: rgba(117, 54, 255, 0.05);
+  }
+}
+
+.drop-zone.active {
+  animation: pulse-border 1.5s infinite;
+}
+
+/* ידית גרירה משופרת */
+.section-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--primary-color);
+  opacity: 0.8;
+  z-index: 10;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.canvas-section:hover .section-handle {
+  opacity: 1;
+}
+
+.section-handle:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: scale(1.05);
+}
+
+.section-handle:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.drag-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.drag-icon:before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 8px;
+  background-image: linear-gradient(
+    to bottom,
+    currentColor 1px,
+    transparent 1px,
+    transparent 3px,
+    currentColor 3px,
+    currentColor 4px,
+    transparent 4px,
+    transparent 6px,
+    currentColor 6px,
+    currentColor 7px
+  );
+}
+
+/* סגנון לסקשן בזמן גרירה */
+.canvas-section {
+  position: relative;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.canvas-section.selected {
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.canvas-section.dragging {
+  opacity: 0.4;
+  outline: 1px dashed var(--border-color);
+  pointer-events: none;
+  transform: scale(0.99);
+}
+
+/* תצוגה מקדימה לגרירה */
+.drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.drag-preview-icon {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+/* שיפור עיצוב בסיידבר */
+.component-item {
+  position: relative;
+  border-radius: 6px;
+  padding: 16px 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.component-item:hover {
+  background-color: rgba(117, 54, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.component-item:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+
+.component-icon {
+  margin-bottom: 8px;
+  color: var(--primary-color);
+}
+
+.component-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark-text);
+}
+
+.drag-hint {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--light-text);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+}
+
+.component-item:hover .drag-hint {
+  opacity: 0.7;
+  transform: translateY(0);
+}
+
+/* תיקונים כלליים */
+.section-content {
+  position: relative;
+}
+
+.section-actions {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
+
+.delete-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  background-color: white;
+  color: #e74c3c;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+}
+
+.delete-button:hover {
+  background-color: #e74c3c;
+  color: white;
+  opacity: 1;
+}

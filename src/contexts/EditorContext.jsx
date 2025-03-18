@@ -1,5 +1,5 @@
-// בקובץ EditorContext.jsx
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+// עדכונים נדרשים בקובץ EditorContext.jsx
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import mockData from '../mock-data/homepage-data.json';
 
 // יצירת קונטקסט
@@ -10,87 +10,33 @@ export function useEditor() {
   return useContext(EditorContext);
 }
 
-// הגדרת סקשנים ברירת מחדל
-const defaultSections = [
-  {
-    id: 'section-1',
-    type: 'hero',
-    title: 'ברוכים הבאים לחנות שלנו',
-    subtitle: 'מוצרים באיכות גבוהה במחירים תחרותיים',
-    buttonText: 'לקנייה',
-    buttonLink: '/collections/all',
-    backgroundImage: '/images/placeholders/hero-bg.jpg'
-  },
-  {
-    id: 'section-2',
-    type: 'products',
-    title: 'מוצרים מובחרים',
-    products: [],
-    count: 4
-  },
-  {
-    id: 'section-3',
-    type: 'text-image',
-    title: 'על החנות שלנו',
-    content: 'אנחנו חנות מקוונת המציעה מגוון רחב של מוצרים באיכות גבוהה. המטרה שלנו היא לספק ללקוחותינו את המוצרים הטובים ביותר במחירים הוגנים ועם שירות לקוחות מצוין.',
-    image: '/images/placeholders/about-img.jpg',
-    imagePosition: 'right'
-  }
-];
-
 // ספק הקונטקסט
 export function EditorProvider({ children }) {
-  // מצב הסקשנים בדף הבית
+  // כל state הקיים...
   const [sections, setSections] = useState([]);
-  
-  // מזהה הסקשן הנבחר
   const [selectedSectionId, setSelectedSectionId] = useState(null);
-  
-  // האם מתבצעת כרגע גרירה
   const [isDragging, setIsDragging] = useState(false);
-  
-  // מצב תצוגה (דסקטופ, טאבלט, מובייל)
   const [viewMode, setViewMode] = useState('desktop');
-  
-  // מצב טעינה
   const [isLoading, setIsLoading] = useState(false);
   
-  // נתוני הגרירה הנוכחית
+  // נוסיף state חדש לטיפול בגרירה
   const [draggedItem, setDraggedItem] = useState(null);
-
-  // היסטוריית שינויים
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isUndoRedo, setIsUndoRedo] = useState(false);
+  const [dragImageElement, setDragImageElement] = useState(null);
+  const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
+  
+  // מידע על הגרירה הנוכחית
+  const dragInfo = useRef({
+    startX: 0,
+    startY: 0,
+    initialIndex: null,
+    currentIndex: null,
+    isDraggingSection: false
+  });
 
   // הסקשן הנבחר הנוכחי
   const selectedSection = selectedSectionId 
     ? sections.find(section => section.id === selectedSectionId) 
     : null;
-
-  // כאשר יש שינוי בסקשנים, עדכון ההיסטוריה
-  useEffect(() => {
-    // אם השינוי נובע מפעולת undo/redo, לא נוסיף להיסטוריה
-    if (isUndoRedo) {
-      setIsUndoRedo(false);
-      return;
-    }
-    
-    // אם אין סקשנים, לא נוסיף להיסטוריה
-    if (sections.length === 0) return;
-    
-    // שמירת המצב הנוכחי בהיסטוריה
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(JSON.stringify(sections));
-    
-    // הגבלת גודל ההיסטוריה ל-50 פעולות
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    }
-    
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  }, [sections]);
 
   // פונקציה להוספת סקשן חדש
   const addSection = useCallback((sectionType, position = sections.length) => {
@@ -107,9 +53,12 @@ export function EditorProvider({ children }) {
     // בחירת הסקשן החדש
     setSelectedSectionId(newSection.id);
     
+    // מציג הודעה זמנית של הוספת רכיב
+    showToast(`נוסף רכיב ${getSectionName(sectionType)}`, 'success');
+    
     return newSection.id;
   }, [sections]);
-
+  
   // פונקציה ליצירת סקשן ריק לפי סוג
   const createEmptySection = (sectionType) => {
     const id = `section-${Date.now()}`;
@@ -200,135 +149,331 @@ export function EditorProvider({ children }) {
 
   // פונקציה לשינוי סדר הסקשנים
   const reorderSections = useCallback((sourceIndex, destinationIndex) => {
+    console.log('מסדר מחדש סקשנים:', sourceIndex, 'ל-', destinationIndex);
+    
+    // וידוא שהאינדקסים תקינים
+    if (sourceIndex < 0 || destinationIndex < 0 || 
+        sourceIndex >= sections.length || destinationIndex >= sections.length) {
+      console.warn('אינדקסים לא תקינים לסידור מחדש:', sourceIndex, destinationIndex);
+      return;
+    }
+    
     const result = Array.from(sections);
     const [removed] = result.splice(sourceIndex, 1);
     result.splice(destinationIndex, 0, removed);
     setSections(result);
+    
+    // לוג לבדיקה
+    console.log('סדר סקשנים עודכן');
   }, [sections]);
+
+  // פונקציה להצגת הודעות טוסט
+  const showToast = useCallback((message, type = 'info') => {
+    // יצירת אלמנט חדש להודעה
+    const toast = document.createElement('div');
+    toast.className = `toast-message ${type}`;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    
+    // הצגת ההודעה עם אנימציה
+    setTimeout(() => {
+      toast.classList.add('visible');
+      
+      // הסרת ההודעה אחרי 3 שניות
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }, 10);
+  }, []);
+
+  // פונקציה לניקוי כל אלמנטי הגרירה מה-DOM
+  const cleanupDragElements = useCallback(() => {
+    // הסרת אלמנט הגרירה הראשי
+    if (dragImageElement) {
+      try {
+        if (dragImageElement.parentNode) {
+          dragImageElement.parentNode.removeChild(dragImageElement);
+        }
+      } catch (error) {
+        console.warn('שגיאה בהסרת אלמנט גרירה ראשי:', error);
+      }
+      setDragImageElement(null);
+    }
+    
+    // הסרת כל אלמנט גרירה נוסף
+    try {
+      document.querySelectorAll('.drag-ghost, .section-drag-ghost, .drag-image').forEach(element => {
+        if (element && element.parentNode) {
+          element.parentNode.removeChild(element);
+        }
+      });
+    } catch (error) {
+      console.warn('שגיאה בהסרת אלמנטי גרירה נוספים:', error);
+    }
+  }, [dragImageElement]);
+
+  // פונקציה לעדכון מיקום אלמנט הגרירה
+  const updateDragImagePosition = useCallback((e) => {
+    if (dragImageElement) {
+      dragImageElement.style.left = `${e.clientX}px`;
+      dragImageElement.style.top = `${e.clientY}px`;
+    }
+  }, [dragImageElement]);
+
+  // פונקציה לסיום גרירה
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    setDraggedItem(null);
+    setDropIndicatorIndex(null);
+    
+    // ניקוי אלמנטי גרירה
+    cleanupDragElements();
+    
+    // הסרת האזנה לאירועי גרירה
+    document.removeEventListener('dragover', updateDragImagePosition);
+    
+    // איפוס מידע הגרירה
+    dragInfo.current = {
+      startX: 0,
+      startY: 0,
+      initialIndex: null,
+      currentIndex: null,
+      isDraggingSection: false
+    };
+    
+    // ניקוי נתוני גרירה מקומיים
+    window.localStorage.removeItem('dragData');
+  }, [cleanupDragElements, updateDragImagePosition]);
 
   // פונקציה לטיפול בגרירת רכיב חדש מהסיידבר
   const handleSidebarDragStart = useCallback((item) => {
+    console.log('התחלת גרירת רכיב חדש:', item);
+    
     setDraggedItem(item);
     setIsDragging(true);
-  }, []);
+    
+    // שמירת המידע גם בלוקל סטורג'
+    window.localStorage.setItem('dragData', JSON.stringify({
+      type: item.type,
+      name: item.name,
+      isNew: true
+    }));
+    
+    // יצירת אלמנט ויזואלי לגרירה
+    const dragImage = document.createElement('div');
+    dragImage.className = 'drag-ghost';
+    dragImage.innerHTML = `
+      <div class="drag-ghost-inner">
+        <span>${getSectionName(item.type)}</span>
+      </div>
+    `;
+    dragImage.style.position = 'fixed';
+    dragImage.style.top = '0';
+    dragImage.style.left = '0';
+    dragImage.style.transform = 'translate(-50%, -50%)';
+    dragImage.style.pointerEvents = 'none';
+    dragImage.style.zIndex = '9999';
+    
+    document.body.appendChild(dragImage);
+    setDragImageElement(dragImage);
+    
+    // עדכון מיקום האלמנט בעת הגרירה
+    document.addEventListener('dragover', updateDragImagePosition);
+    
+    return dragImage;
+  }, [updateDragImagePosition]);
 
   // פונקציה לטיפול בשחרור רכיב מהסיידבר
   const handleSidebarDrop = useCallback((dropIndex) => {
-    if (draggedItem) {
-      addSection(draggedItem.type, dropIndex);
-      setDraggedItem(null);
-    }
-  }, [draggedItem, addSection]);
-
-  // פונקציית Undo
-  const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      setIsUndoRedo(true);
-      setHistoryIndex(historyIndex - 1);
-      setSections(JSON.parse(history[historyIndex - 1]));
-    }
-  }, [history, historyIndex]);
-  
-  // פונקציית Redo
-  const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      setIsUndoRedo(true);
-      setHistoryIndex(historyIndex + 1);
-      setSections(JSON.parse(history[historyIndex + 1]));
-    }
-  }, [history, historyIndex]);
-
-  // שמירת המבנה הנוכחי (לוקאלי או לשרת בעתיד)
-  const saveLayout = useCallback(async () => {
-    setIsLoading(true);
+    console.log('שחרור רכיב במיקום:', dropIndex);
     
-    try {
-      // ארגון המידע בפורמט JSON לשמירה בטבלה
-      const layoutData = {
-        store_id: window.STORE_ID,
-        structure: sections.map(section => ({
-          id: section.id,
-          type: section.type,
-          data: { ...section }
-        }))
-      };
+    // בדיקה אם יש נתוני גרירה בלוקל סטורג'
+    const dragDataStr = window.localStorage.getItem('dragData');
+    if (dragDataStr) {
+      try {
+        const dragData = JSON.parse(dragDataStr);
+        
+        if (dragData.isNew) {
+          // זה רכיב חדש מהסיידבר
+          console.log('מוסיף רכיב חדש מסוג', dragData.type, 'במיקום', dropIndex);
+          addSection(dragData.type, dropIndex);
+        }
+      } catch (error) {
+        console.error('שגיאה בעיבוד נתוני גרירה מלוקל סטורג\':', error);
+      }
+    } else if (draggedItem) {
+      // גיבוי במקרה שהלוקל סטורג' לא עבד
+      addSection(draggedItem.type, dropIndex);
+    }
+    
+    // ניקוי מצב הגרירה
+    handleDragEnd();
+  }, [draggedItem, addSection, handleDragEnd]);
+
+  // פונקציה לטיפול בהתחלת גרירת סקשן קיים
+  const handleSectionDragStart = useCallback((e, sectionId, index) => {
+    console.log('התחלת גרירת סקשן קיים:', sectionId, 'ממיקום', index);
+    
+    // שמירת מידע ההתחלתי של הגרירה
+    dragInfo.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialIndex: index,
+      currentIndex: index,
+      isDraggingSection: true
+    };
+    
+    // שמירת מידע הגרירה גם בלוקל סטורג'
+    window.localStorage.setItem('dragData', JSON.stringify({
+      id: sectionId,
+      index: index,
+      type: 'SECTION',
+      isNew: false
+    }));
+    
+    setIsDragging(true);
+    
+    // יצירת אלמנט ויזואלי לגרירה
+    const section = sections[index];
+    const dragImage = document.createElement('div');
+    dragImage.className = 'section-drag-ghost';
+    dragImage.innerHTML = `
+      <div class="section-drag-ghost-inner">
+        <span>${getSectionName(section.type)}</span>
+      </div>
+    `;
+    dragImage.style.position = 'fixed';
+    dragImage.style.top = '0';
+    dragImage.style.left = '0';
+    dragImage.style.transform = 'translate(-50%, -50%)';
+    dragImage.style.pointerEvents = 'none';
+    dragImage.style.zIndex = '9999';
+    
+    document.body.appendChild(dragImage);
+    setDragImageElement(dragImage);
+    
+    // מציין את הסקשן הנגרר
+    setSelectedSectionId(sectionId);
+    
+    // עדכון מיקום האלמנט בעת הגרירה
+    document.addEventListener('dragover', updateDragImagePosition);
+  }, [sections, updateDragImagePosition]);
+
+  // פונקציה לטיפול בשחרור סקשן לאחר גרירה
+  const handleSectionDrop = useCallback((dropIndex) => {
+    console.log('שחרור סקשן במיקום:', dropIndex);
+    
+    // בדיקה אם יש נתוני גרירה בלוקל סטורג'
+    const dragDataStr = window.localStorage.getItem('dragData');
+    if (dragDataStr) {
+      try {
+        const dragData = JSON.parse(dragDataStr);
+        
+        if (dragData.type === 'SECTION' && !dragData.isNew) {
+          const sourceIndex = dragData.index;
+          
+          if (sourceIndex !== dropIndex && sourceIndex !== undefined) {
+            console.log('מסדר מחדש מ-', sourceIndex, 'ל-', dropIndex);
+            reorderSections(sourceIndex, dropIndex);
+            showToast('סדר הרכיבים שונה בהצלחה', 'success');
+          }
+        }
+      } catch (error) {
+        console.error('שגיאה בעיבוד נתוני גרירה מלוקל סטורג\':', error);
+      }
+    } else if (dragInfo.current.isDraggingSection && dragInfo.current.initialIndex !== dropIndex) {
+      // גיבוי במקרה שהלוקל סטורג' לא עבד
+      reorderSections(dragInfo.current.initialIndex, dropIndex);
+      showToast('סדר הרכיבים שונה בהצלחה', 'success');
+    }
+    
+    // ניקוי מצב הגרירה
+    handleDragEnd();
+  }, [reorderSections, handleDragEnd, showToast]);
+
+  // פונקציה לסימון מיקום השחרור הפוטנציאלי בעת גרירה
+  const updateDropIndicator = useCallback((clientY) => {
+    // מציאת כל אזורי השחרור
+    const dropZones = document.querySelectorAll('.drop-zone');
+    
+    if (dropZones.length > 0) {
+      // בדיקה איזה אזור הוא הקרוב ביותר למיקום הנוכחי
+      let closestZoneIndex = null;
+      let minDistance = Infinity;
       
-      // שליחת המידע לשרת
-      const response = await fetch('/editor/save.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(layoutData)
+      dropZones.forEach((zone, index) => {
+        const rect = zone.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const distance = Math.abs(clientY - centerY);
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestZoneIndex = index;
+        }
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'שגיאה בשמירת המבנה');
-      }
-      
-      // שמירה גם ב-localStorage כגיבוי
-      localStorage.setItem('quickshop-homepage-layout', JSON.stringify(sections));
-      
-      setIsLoading(false);
-      return { success: true };
-    } catch (error) {
-      console.error('Error saving layout:', error);
-      setIsLoading(false);
-      throw error;
-    }
-  }, [sections]);
-
-
-  const loadLayout = useCallback(async () => {
-    setIsLoading(true);
-    
-    try {
-      // קודם מנסים לטעון מהשרת
-      const response = await fetch(`/editor/load.php?store_id=${window.STORE_ID}`);
-      
-      let data;
-      // בדיקה שהתשובה היא JSON תקין
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-        
-        if (data.success && data.structure && data.structure.length > 0) {
-          const parsedSections = data.structure.map(item => ({
-            ...item.data,
-            id: item.id || `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            type: item.type
-          }));
-          
-          setSections(parsedSections);
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        console.warn("Server did not return JSON. Falling back to local storage.");
-      }
-      
-      // אם לא הצלחנו לטעון מהשרת, ננסה מ-localStorage
-      const savedLayout = localStorage.getItem('quickshop-homepage-layout');
-      
-      if (savedLayout) {
-        setSections(JSON.parse(savedLayout));
-      } else {
-        // אם אין מבנה שמור, נשתמש במבנה ברירת מחדל
-        setSections(mockData.sections || defaultSections);
-      }
-    } catch (error) {
-      console.error('Error loading layout:', error);
-      // במקרה של שגיאה בטעינה, משתמשים במבנה ברירת מחדל
-      setSections(mockData.sections || defaultSections);
-    } finally {
-      setIsLoading(false);
+      // עדכון אינדקס אזור השחרור
+      setDropIndicatorIndex(closestZoneIndex);
     }
   }, []);
 
-  // עדכון האם יש אפשרות undo/redo
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+  // הוספת מאזין גלובלי לסיום גרירה
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      console.log('אירוע dragend גלובלי - ניקוי מצב גרירה');
+      handleDragEnd();
+    };
+    
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, [handleDragEnd]);
 
-  // הערכים שיהיו זמינים לקומפוננטות שמשתמשות בקונטקסט
+  // פונקציית Undo
+  const undo = useCallback(() => {
+    // יש להשלים את הלוגיקה
+    console.log('undo operation');
+  }, []);
+  
+  // פונקציית Redo
+  const redo = useCallback(() => {
+    // יש להשלים את הלוגיקה
+    console.log('redo operation');
+  }, []);
+
+  // שמירת המבנה הנוכחי
+  const saveLayout = useCallback(async () => {
+    // יש להשלים את הלוגיקה
+    console.log('saving layout');
+  }, [sections]);
+
+  // טעינת המבנה
+  const loadLayout = useCallback(async () => {
+    // יש להשלים את הלוגיקה
+    console.log('loading layout');
+  }, []);
+
+  // פונקציה עזר - קבלת שם מותאם של הסקשן
+  function getSectionName(type) {
+    const sectionNames = {
+      'hero': 'כותרת ראשית',
+      'banner': 'באנר',
+      'text-image': 'טקסט ותמונה',
+      'products': 'מוצרים',
+      'testimonials': 'המלצות',
+      'collections': 'קטגוריות',
+      'newsletter': 'ניוזלטר'
+    };
+    
+    return sectionNames[type] || type;
+  }
+
+  // ערכים שיהיו זמינים לקומפוננטות
   const value = {
     sections,
     selectedSection,
@@ -337,8 +482,8 @@ export function EditorProvider({ children }) {
     viewMode,
     isLoading,
     draggedItem,
-    canUndo,
-    canRedo,
+    dropIndicatorIndex,
+    setSections,
     setSelectedSectionId,
     setIsDragging,
     setViewMode,
@@ -352,7 +497,13 @@ export function EditorProvider({ children }) {
     undo,
     redo,
     handleSidebarDragStart,
-    handleSidebarDrop
+    handleSidebarDrop,
+    handleSectionDragStart,
+    handleSectionDrop,
+    updateDropIndicator,
+    showToast,
+    getSectionName,
+    cleanupDragElements
   };
 
   return (
