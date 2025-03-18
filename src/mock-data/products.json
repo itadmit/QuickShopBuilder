@@ -1,0 +1,60 @@
+{
+    "products": [
+      {
+        "id": 1,
+        "title": "מוצר לדוגמה 1",
+        "slug": "sample-product-1",
+        "price": 99.99,
+        "image_url": "/images/placeholders/product1.jpg"
+      },
+      {
+        "id": 2,
+        "title": "מוצר לדוגמה 2",
+        "slug": "sample-product-2",
+        "price": 149.99,
+        "image_url": "/images/placeholders/product2.jpg"
+      },
+      {
+        "id": 3,
+        "title": "מוצר לדוגמה 3",
+        "slug": "sample-product-3",
+        "price": 199.99,
+        "image_url": "/images/placeholders/product3.jpg"
+      },
+      {
+        "id": 4,
+        "title": "מוצר לדוגמה 4",
+        "slug": "sample-product-4",
+        "price": 129.99,
+        "image_url": "/images/placeholders/product4.jpg"
+      },
+      {
+        "id": 5,
+        "title": "מוצר לדוגמה 5",
+        "slug": "sample-product-5",
+        "price": 79.99,
+        "image_url": "/images/placeholders/product5.jpg"
+      },
+      {
+        "id": 6,
+        "title": "מוצר לדוגמה 6",
+        "slug": "sample-product-6",
+        "price": 249.99,
+        "image_url": "/images/placeholders/product6.jpg"
+      },
+      {
+        "id": 7,
+        "title": "מוצר לדוגמה 7",
+        "slug": "sample-product-7",
+        "price": 349.99,
+        "image_url": "/images/placeholders/product7.jpg"
+      },
+      {
+        "id": 8,
+        "title": "מוצר לדוגמה 8",
+        "slug": "sample-product-8",
+        "price": 159.99,
+        "image_url": "/images/placeholders/product8.jpg"
+      }
+    ]
+  }

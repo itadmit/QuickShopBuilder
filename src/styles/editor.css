@@ -1,0 +1,413 @@
+/* סגנונות כלליים */
+:root {
+  --font-family: 'Noto Sans Hebrew', sans-serif;
+  --primary-color: #5271ff;
+  --secondary-color: #f8f9fb;
+  --dark-text: #202123;
+  --light-text: #65676b;
+  --border-color: #e4e6eb;
+  --accent-color: #ff6b6b;
+  --success-color: #47c479;
+}
+
+body, button, input, textarea, select {
+  font-family: var(--font-family);
+}
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    direction: rtl;
+  }
+  
+  /* מבנה הבילדר */
+  .editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .editor-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  /* סרגל כלים */
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: white;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .logo h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--primary-color);
+  }
+  
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .save-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .preview-button {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  /* תפריט צד */
+  .sidebar {
+    width: 250px;
+    background-color: white;
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .sidebar h3 {
+    margin-top: 0;
+    color: var(--dark-text);
+    font-size: 1.1rem;
+  }
+  
+  .components-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .component-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .component-item:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .component-icon {
+    font-size: 1.2rem;
+  }
+  
+  /* אזור העריכה */
+  .canvas {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: var(--secondary-color);
+  }
+  
+  .canvas-area {
+    min-height: 100%;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: white;
+  }
+  
+  .canvas-area.drag-over {
+    background-color: rgba(74, 144, 226, 0.05);
+  }
+  
+  .empty-canvas {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--light-text);
+  }
+  
+  .canvas-section {
+    position: relative;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  
+  .canvas-section:hover {
+    border-color: var(--border-color);
+  }
+  
+  .canvas-section.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+  
+  .canvas-section.dragging {
+    opacity: 0.7;
+  }
+  
+  .section-handle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 4px;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .canvas-section:hover .section-handle {
+    opacity: 1;
+  }
+  
+  .section-actions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .canvas-section:hover .section-actions {
+    opacity: 1;
+  }
+  
+  .section-actions button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .section-content {
+    padding: 30px 10px 10px;
+  }
+  
+  /* פאנל המאפיינים */
+  .property-panel {
+    width: 300px;
+    background-color: white;
+    border-left: 1px solid var(--border-color);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .property-panel h3 {
+    margin-top: 0;
+    color: var(--dark-text);
+    font-size: 1.1rem;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .property-group {
+    margin-bottom: 16px;
+  }
+  
+  .property-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--dark-text);
+    font-weight: 500;
+  }
+  
+  .property-group input,
+  .property-group textarea,
+  .property-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .property-group input:focus,
+  .property-group textarea:focus,
+  .property-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+  }
+  
+  .browse-button {
+    margin-top: 8px;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .empty-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--light-text);
+    font-style: italic;
+  }
+  
+  /* סקשנים */
+  .hero-section {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    position: relative;
+  }
+  
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+  }
+  
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    padding: 0 20px;
+  }
+  
+  .hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hero-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+  }
+  
+  .hero-button:hover {
+    background-color: #3a7ac8;
+  }
+
+  /* סגנונות מודרניים נוספים */
+
+/* בקרת צבע */
+.color-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  
+  .color-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+  }
+  
+  .color-popup {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+  }
+  
+  .color-input {
+    width: 100%;
+    height: 30px;
+    margin-bottom: 10px;
+  }
+  
+  .color-presets {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  
+  .color-preset {
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+  }
+  
+  /* בקרת מספר - סלייידר */
+  .range-slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .slider-container {
+    flex: 1;
+    position: relative;
+  }
+  
+  .range-input {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: var(--border-color);
+    border-radius: 3px;
+    outline: none;
+  }
+
+  

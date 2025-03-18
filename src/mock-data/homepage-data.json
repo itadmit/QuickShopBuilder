@@ -1,0 +1,71 @@
+{
+    "sections": [
+      {
+        "id": "section-1",
+        "type": "hero",
+        "title": "ברוכים הבאים לחנות שלנו",
+        "subtitle": "מוצרים באיכות גבוהה במחירים תחרותיים",
+        "buttonText": "לקנייה",
+        "buttonLink": "/collections/all",
+        "backgroundImage": "/images/placeholders/hero-bg.jpg"
+      },
+      {
+        "id": "section-2",
+        "type": "products",
+        "title": "מוצרים מובחרים",
+        "products": [
+          { "id": 1, "title": "מוצר לדוגמה 1", "price": 99.99, "image_url": "/images/placeholders/product1.jpg" },
+          { "id": 2, "title": "מוצר לדוגמה 2", "price": 149.99, "image_url": "/images/placeholders/product2.jpg" },
+          { "id": 3, "title": "מוצר לדוגמה 3", "price": 199.99, "image_url": "/images/placeholders/product3.jpg" },
+          { "id": 4, "title": "מוצר לדוגמה 4", "price": 129.99, "image_url": "/images/placeholders/product4.jpg" }
+        ],
+        "count": 4
+      },
+      {
+        "id": "section-3",
+        "type": "banner",
+        "title": "מבצע מיוחד לחודש הקרוב",
+        "subtitle": "הנחה של 20% על כל החנות",
+        "buttonText": "לראות מבצעים",
+        "buttonLink": "/collections/sale",
+        "backgroundImage": "/images/placeholders/banner-bg.jpg"
+      },
+      {
+        "id": "section-4",
+        "type": "text-image",
+        "title": "על החנות שלנו",
+        "content": "אנחנו חנות מקוונת המציעה מגוון רחב של מוצרים באיכות גבוהה. המטרה שלנו היא לספק ללקוחותינו את המוצרים הטובים ביותר במחירים הוגנים ועם שירות לקוחות מצוין. אנו מתחייבים לאיכות גבוהה ולשביעות רצון מלאה של לקוחותינו.",
+        "image": "/images/placeholders/about-img.jpg",
+        "imagePosition": "right"
+      },
+      {
+        "id": "section-5",
+        "type": "testimonials",
+        "title": "לקוחות ממליצים",
+        "testimonials": [
+          { "id": 1, "author": "ישראל ישראלי", "content": "קניתי כמה פריטים מהחנות וכולם היו באיכות מעולה. בנוסף, השירות היה מצוין והמשלוח הגיע מהר מאוד." },
+          { "id": 2, "author": "חנה כהן", "content": "אני קונה מחנות זו בקביעות כבר שנתיים. תמיד מרוצה מהאיכות, מהמחירים ומהשירות. ממליצה בחום!" }
+        ]
+      },
+      {
+        "id": "section-6",
+        "type": "collections",
+        "title": "קטגוריות פופולריות",
+        "collections": [
+          { "id": 1, "title": "קטגוריה 1", "image_url": "/images/placeholders/collection1.jpg" },
+          { "id": 2, "title": "קטגוריה 2", "image_url": "/images/placeholders/collection2.jpg" },
+          { "id": 3, "title": "קטגוריה 3", "image_url": "/images/placeholders/collection3.jpg" }
+        ],
+        "count": 3
+      },
+      {
+        "id": "section-7",
+        "type": "newsletter",
+        "title": "הצטרפו לניוזלטר שלנו",
+        "subtitle": "קבלו עדכונים על מוצרים חדשים ומבצעים מיוחדים",
+        "buttonText": "הרשמה",
+        "backgroundImage": null,
+        "backgroundColor": "#f7f7f7"
+      }
+    ]
+  }

@@ -1,0 +1,40 @@
+{
+    "collections": [
+      {
+        "id": 1,
+        "title": "קטגוריה לדוגמה 1",
+        "slug": "sample-collection-1",
+        "image_url": "/images/placeholders/collection1.jpg"
+      },
+      {
+        "id": 2,
+        "title": "קטגוריה לדוגמה 2",
+        "slug": "sample-collection-2",
+        "image_url": "/images/placeholders/collection2.jpg"
+      },
+      {
+        "id": 3,
+        "title": "קטגוריה לדוגמה 3",
+        "slug": "sample-collection-3",
+        "image_url": "/images/placeholders/collection3.jpg"
+      },
+      {
+        "id": 4,
+        "title": "קטגוריה לדוגמה 4",
+        "slug": "sample-collection-4",
+        "image_url": "/images/placeholders/collection4.jpg"
+      },
+      {
+        "id": 5,
+        "title": "קטגוריה לדוגמה 5",
+        "slug": "sample-collection-5",
+        "image_url": "/images/placeholders/collection5.jpg"
+      },
+      {
+        "id": 6,
+        "title": "קטגוריה לדוגמה 6",
+        "slug": "sample-collection-6",
+        "image_url": "/images/placeholders/collection6.jpg"
+      }
+    ]
+  }
