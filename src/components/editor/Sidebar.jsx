@@ -1,83 +1,86 @@
-// בקובץ Sidebar.jsx - שיפור מנגנון הגרירה
-import React, { useState } from 'react';
+// תיקון לקובץ Sidebar.jsx
+import React from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail } from 'react-icons/fi';
 
 // רכיב פריט גרירה משופר
 const DraggableItem = ({ component, icon }) => {
   const { addSection, setIsDragging } = useEditor();
-  const [isDragging, setItemDragging] = useState(false);
-
+  
   // טיפול בגרירה
   const handleDragStart = (e) => {
-    // שמירת נתוני הגרירה
-    const data = { 
+    // שמירת נתוני הגרירה בפורמט משותף
+    const dragData = { 
       type: component.id, 
-      name: component.name 
+      name: component.name,
+      isNew: true
     };
     
-    e.dataTransfer.setData('text/plain', JSON.stringify(data));
-    e.dataTransfer.setData('application/json', JSON.stringify(data));
+    // שמירה בשני סוגי פורמטים לתמיכה טובה יותר בדפדפנים שונים
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+    try {
+      e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    } catch (error) {
+      console.warn('Browser does not support application/json dataTransfer', error);
+    }
+    
     e.dataTransfer.effectAllowed = 'copy';
     
-    setItemDragging(true);
-    setIsDragging(true); // עדכון מצב גרירה גלובלי
+    // עדכון מצב גרירה גלובלי
+    setIsDragging(true);
     
-    // שמירת המידע גם בלוקל סטורג'
-    window.localStorage.setItem('dragData', JSON.stringify(data));
+    // שמירת המידע גם בלוקל סטורג' כגיבוי
+    window.localStorage.setItem('dragData', JSON.stringify(dragData));
     
-    // יצירת אלמנט גרירה מותאם אישית
-    setTimeout(() => {
-      try {
-        const componentItem = e.currentTarget;
-        const rect = componentItem.getBoundingClientRect();
-        
-        // יצירת אלמנט פשוט יותר לתצוגת גרירה
-        const dragPreview = document.createElement('div');
-        dragPreview.innerHTML = `<div class="drag-preview"><div class="drag-preview-icon">${icon.props.size}</div><div>${component.name}</div></div>`;
-        dragPreview.style.position = 'absolute';
-        dragPreview.style.top = '-1000px';
-        dragPreview.style.left = '-1000px';
-        dragPreview.style.backgroundColor = 'white';
-        dragPreview.style.padding = '8px 12px';
-        dragPreview.style.borderRadius = '4px';
-        dragPreview.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-        dragPreview.style.zIndex = '9999';
-        dragPreview.style.pointerEvents = 'none';
-        dragPreview.classList.add('drag-ghost');
-        
-        document.body.appendChild(dragPreview);
-        e.dataTransfer.setDragImage(dragPreview, dragPreview.offsetWidth / 2, 20);
-      } catch (error) {
-        console.warn('Error creating drag image:', error);
-      }
-    }, 0);
+    // יצירת אלמנט ויזואלי לגרירה
+    try {
+      const ghostElement = document.createElement('div');
+      ghostElement.className = 'drag-preview';
+      ghostElement.innerHTML = `<div class="component-preview">${component.name}</div>`;
+      ghostElement.style.position = 'absolute';
+      ghostElement.style.top = '-1000px';
+      ghostElement.style.left = '-1000px';
+      ghostElement.style.padding = '10px 15px';
+      ghostElement.style.background = '#5271ff';
+      ghostElement.style.color = 'white';
+      ghostElement.style.borderRadius = '4px';
+      ghostElement.style.zIndex = '9999';
+      ghostElement.style.pointerEvents = 'none';
+      
+      document.body.appendChild(ghostElement);
+      e.dataTransfer.setDragImage(ghostElement, ghostElement.offsetWidth / 2, 20);
+      
+      // נשמור את האלמנט כך שנוכל להסיר אותו בסיום
+      window.currentDragGhost = ghostElement;
+    } catch (error) {
+      console.warn('Error creating drag ghost', error);
+    }
   };
   
   // טיפול בסיום גרירה
   const handleDragEnd = () => {
-    setItemDragging(false);
-    setIsDragging(false); // ניקוי מצב גרירה גלובלי
+    // ניקוי מצב גרירה גלובלי
+    setIsDragging(false);
     
-    // ניקוי אלמנטי גרירה וסטייט
+    // הסרת אלמנט הגרירה מה-DOM
     try {
-      const dragGhosts = document.querySelectorAll('.drag-ghost');
-      dragGhosts.forEach(ghost => {
-        document.body.removeChild(ghost);
-      });
+      if (window.currentDragGhost && window.currentDragGhost.parentNode) {
+        window.currentDragGhost.parentNode.removeChild(window.currentDragGhost);
+        window.currentDragGhost = null;
+      }
     } catch (error) {
-      console.warn('Error removing drag ghosts:', error);
+      console.warn('Error removing drag ghost', error);
     }
   };
 
-  // הוספת רכיב באמצעות לחיצה
+  // הוספת רכיב באמצעות לחיצה פשוטה
   const handleClick = () => {
     addSection(component.id);
   };
   
   return (
     <div
-      className={`component-item ${isDragging ? 'dragging' : ''}`}
+      className="component-item"
       draggable="true"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

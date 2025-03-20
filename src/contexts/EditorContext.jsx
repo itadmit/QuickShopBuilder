@@ -1,4 +1,4 @@
-// עדכונים נדרשים בקובץ EditorContext.jsx
+// EditorContext.jsx - תיקון בעיית reference לפונקציית showToast
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import mockData from '../mock-data/homepage-data.json';
 
@@ -12,14 +12,12 @@ export function useEditor() {
 
 // ספק הקונטקסט
 export function EditorProvider({ children }) {
-  // כל state הקיים...
+  // states
   const [sections, setSections] = useState([]);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [viewMode, setViewMode] = useState('desktop');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // נוסיף state חדש לטיפול בגרירה
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragImageElement, setDragImageElement] = useState(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
@@ -38,26 +36,27 @@ export function EditorProvider({ children }) {
     ? sections.find(section => section.id === selectedSectionId) 
     : null;
 
-  // פונקציה להוספת סקשן חדש
-  const addSection = useCallback((sectionType, position = sections.length) => {
-    // יצירת סקשן חדש עם מזהה ייחודי
-    const newSection = createEmptySection(sectionType);
+  // פונקציה להצגת הודעות טוסט - חייבת להיות מוגדרת לפני שמשתמשים בה
+  const showToast = useCallback((message, type = 'info') => {
+    // יצירת אלמנט חדש להודעה
+    const toast = document.createElement('div');
+    toast.className = `toast-message ${type}`;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
     
-    // העתקת מערך הסקשנים הקיים והוספת הסקשן החדש במיקום הספציפי
-    const newSections = [...sections];
-    newSections.splice(position, 0, newSection);
-    
-    // עדכון מצב הסקשנים
-    setSections(newSections);
-    
-    // בחירת הסקשן החדש
-    setSelectedSectionId(newSection.id);
-    
-    // מציג הודעה זמנית של הוספת רכיב
-    showToast(`נוסף רכיב ${getSectionName(sectionType)}`, 'success');
-    
-    return newSection.id;
-  }, [sections]);
+    // הצגת ההודעה עם אנימציה
+    setTimeout(() => {
+      toast.classList.add('visible');
+      
+      // הסרת ההודעה אחרי 3 שניות
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }, 10);
+  }, []);
   
   // פונקציה ליצירת סקשן ריק לפי סוג
   const createEmptySection = (sectionType) => {
@@ -128,6 +127,29 @@ export function EditorProvider({ children }) {
     return defaultTypeSections[sectionType] || defaultTypeSections['text-image'];
   };
 
+  // פונקציה להוספת סקשן חדש
+  const addSection = useCallback((sectionType, position = sections.length) => {
+    console.log(`Adding section of type ${sectionType} at position ${position}`);
+    
+    // יצירת סקשן חדש עם מזהה ייחודי
+    const newSection = createEmptySection(sectionType);
+    
+    // העתקת מערך הסקשנים הקיים והוספת הסקשן החדש במיקום הספציפי
+    const newSections = [...sections];
+    newSections.splice(position, 0, newSection);
+    
+    // עדכון מצב הסקשנים
+    setSections(newSections);
+    
+    // בחירת הסקשן החדש
+    setSelectedSectionId(newSection.id);
+    
+    // מציג הודעה זמנית של הוספת רכיב
+    showToast(`נוסף רכיב ${getSectionName(sectionType)}`, 'success');
+    
+    return newSection.id;
+  }, [sections, showToast]);
+
   // פונקציה לעדכון סקשן קיים
   const updateSection = useCallback((sectionId, data) => {
     setSections(prevSections => 
@@ -149,45 +171,37 @@ export function EditorProvider({ children }) {
 
   // פונקציה לשינוי סדר הסקשנים
   const reorderSections = useCallback((sourceIndex, destinationIndex) => {
-    console.log('מסדר מחדש סקשנים:', sourceIndex, 'ל-', destinationIndex);
+    console.log(`Reordering section from index ${sourceIndex} to index ${destinationIndex}`);
     
     // וידוא שהאינדקסים תקינים
     if (sourceIndex < 0 || destinationIndex < 0 || 
         sourceIndex >= sections.length || destinationIndex >= sections.length) {
-      console.warn('אינדקסים לא תקינים לסידור מחדש:', sourceIndex, destinationIndex);
+      console.warn('Invalid indices for reordering:', sourceIndex, destinationIndex);
       return;
     }
     
+    // אם המקור והיעד זהים, אין צורך לעשות כלום
+    if (sourceIndex === destinationIndex) {
+      console.log('Source and destination indices are the same, no reordering needed');
+      return;
+    }
+    
+    // העתקת המערך הנוכחי
     const result = Array.from(sections);
+    
+    // הסרת האלמנט מהמקור והוספתו ליעד
     const [removed] = result.splice(sourceIndex, 1);
     result.splice(destinationIndex, 0, removed);
+    
+    // עדכון הסקשנים
     setSections(result);
     
     // לוג לבדיקה
-    console.log('סדר סקשנים עודכן');
-  }, [sections]);
-
-  // פונקציה להצגת הודעות טוסט
-  const showToast = useCallback((message, type = 'info') => {
-    // יצירת אלמנט חדש להודעה
-    const toast = document.createElement('div');
-    toast.className = `toast-message ${type}`;
-    toast.innerHTML = message;
-    document.body.appendChild(toast);
+    console.log('Sections reordered successfully');
     
-    // הצגת ההודעה עם אנימציה
-    setTimeout(() => {
-      toast.classList.add('visible');
-      
-      // הסרת ההודעה אחרי 3 שניות
-      setTimeout(() => {
-        toast.classList.remove('visible');
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 300);
-      }, 3000);
-    }, 10);
-  }, []);
+    // בחירת הסקשן שהועבר
+    setSelectedSectionId(removed.id);
+  }, [sections, setSelectedSectionId]);
 
   // פונקציה לניקוי כל אלמנטי הגרירה מה-DOM
   const cleanupDragElements = useCallback(() => {
@@ -378,7 +392,6 @@ export function EditorProvider({ children }) {
           if (sourceIndex !== dropIndex && sourceIndex !== undefined) {
             console.log('מסדר מחדש מ-', sourceIndex, 'ל-', dropIndex);
             reorderSections(sourceIndex, dropIndex);
-            showToast('סדר הרכיבים שונה בהצלחה', 'success');
           }
         }
       } catch (error) {
@@ -387,12 +400,11 @@ export function EditorProvider({ children }) {
     } else if (dragInfo.current.isDraggingSection && dragInfo.current.initialIndex !== dropIndex) {
       // גיבוי במקרה שהלוקל סטורג' לא עבד
       reorderSections(dragInfo.current.initialIndex, dropIndex);
-      showToast('סדר הרכיבים שונה בהצלחה', 'success');
     }
     
     // ניקוי מצב הגרירה
     handleDragEnd();
-  }, [reorderSections, handleDragEnd, showToast]);
+  }, [reorderSections, handleDragEnd]);
 
   // פונקציה לסימון מיקום השחרור הפוטנציאלי בעת גרירה
   const updateDropIndicator = useCallback((clientY) => {
@@ -456,7 +468,21 @@ export function EditorProvider({ children }) {
   const loadLayout = useCallback(async () => {
     // יש להשלים את הלוגיקה
     console.log('loading layout');
-  }, []);
+    
+    // לצורך הדוגמה, נטען נתונים ממוקאפ
+    try {
+      // במציאות כאן תהיה קריאת API
+      setTimeout(() => {
+        if (mockData && mockData.sections) {
+          setSections(mockData.sections);
+          showToast('הלייאאוט נטען בהצלחה', 'success');
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Error loading layout:', error);
+      showToast('שגיאה בטעינת הלייאאוט', 'error');
+    }
+  }, [showToast]);
 
   // פונקציה עזר - קבלת שם מותאם של הסקשן
   function getSectionName(type) {

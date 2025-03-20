@@ -1,6 +1,7 @@
-// Canvas.jsx - גרסה פשוטה יותר המתמקדת באזורי שחרור ברורים
-import React, { useState } from 'react';
+// Canvas.jsx - גישה משולבת: גרירה מהסיידבר + כפתורי ניווט
+import React, { useState, useEffect } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
+import { FiArrowUp, FiArrowDown, FiTrash2 } from 'react-icons/fi';
 
 // ייבוא כל הסקשנים
 import HeroSection from '../sections/HeroSection';
@@ -20,11 +21,28 @@ const Canvas = () => {
     addSection,
     reorderSections,
     isDragging, 
-    setIsDragging
+    setIsDragging,
+    showToast
   } = useEditor();
 
   // מצב מקומי לסימון אזור שחרור פעיל
   const [activeDropZoneIndex, setActiveDropZoneIndex] = useState(null);
+  
+  // הוספת ניטור לאירועי גרירה גלובליים
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      console.log("Global drag end event");
+      setIsDragging(false);
+      setActiveDropZoneIndex(null);
+      localStorage.removeItem('dragData');
+    };
+    
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, [setIsDragging]);
 
   // פונקציה לרנדור סקשן לפי סוג
   const renderSection = (section) => {
@@ -48,96 +66,104 @@ const Canvas = () => {
     }
   };
 
+  // פונקציה להזזת סקשן למעלה
+  const moveSectionUp = (index) => {
+    if (index > 0) {
+      reorderSections(index, index - 1);
+      showToast && showToast("הרכיב הועבר למעלה", "success");
+    }
+  };
+
+  // פונקציה להזזת סקשן למטה
+  const moveSectionDown = (index) => {
+    if (index < sections.length - 1) {
+      reorderSections(index, index + 1);
+      showToast && showToast("הרכיב הועבר למטה", "success");
+    }
+  };
+
   // פונקציות גרירה HTML5 native
   const handleDragOver = (e, index) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // קביעת אפקט הגרירה
     e.dataTransfer.dropEffect = 'copy';
     setActiveDropZoneIndex(index);
     
+    // עדכון מצב גרירה גלובלי אם לא מעודכן כבר
     if (!isDragging) {
       setIsDragging(true);
     }
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setActiveDropZoneIndex(null);
-  };
-  
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setActiveDropZoneIndex(null);
-    localStorage.removeItem('dragData');
   };
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("Drop event at index:", dropIndex);
     setActiveDropZoneIndex(null);
     setIsDragging(false);
     
     try {
-      // נסיון לקבל נתונים מהדראג
+      // ניסיון לקבל נתונים מהדראג
       let dragData;
       
-      // בדיקה אם יש נתונים ב-dataTransfer
-      const jsonData = e.dataTransfer.getData('application/json');
-      const textData = e.dataTransfer.getData('text/plain');
+      // ניסיון לקרוא מ-dataTransfer
+      let jsonData;
+      let textData;
+      
+      try {
+        jsonData = e.dataTransfer.getData('application/json');
+      } catch (error) {
+        console.warn('Could not read application/json from dataTransfer', error);
+      }
+      
+      try {
+        textData = e.dataTransfer.getData('text/plain');
+      } catch (error) {
+        console.warn('Could not read text/plain from dataTransfer', error);
+      }
       
       if (jsonData) {
         dragData = JSON.parse(jsonData);
+        console.log("Successfully parsed JSON data from dataTransfer", dragData);
       } else if (textData) {
         dragData = JSON.parse(textData);
+        console.log("Successfully parsed text data from dataTransfer", dragData);
       } else {
-        // נסיון לקרוא מ-localStorage
+        // ניסיון לקרוא מ-localStorage כגיבוי
         const localData = localStorage.getItem('dragData');
+        
         if (localData) {
           dragData = JSON.parse(localData);
+          console.log("Retrieved drag data from localStorage", dragData);
+        } else {
+          console.warn("No drag data found in dataTransfer or localStorage");
         }
       }
       
-      if (dragData) {
-        // אם יש נתוני ID - זה סידור מחדש של סקשן קיים
-        if (dragData.id && dragData.index !== undefined) {
-          // ביצוע סידור מחדש
-          reorderSections(dragData.index, dropIndex);
-        } 
-        // אחרת זה הוספת סקשן חדש
-        else if (dragData.type) {
-          addSection(dragData.type, dropIndex);
-        }
+      if (dragData && dragData.type) {
+        // זה רכיב חדש מהסיידבר
+        console.log("Adding new section of type", dragData.type, "at index", dropIndex);
+        
+        addSection(dragData.type, dropIndex);
+        showToast && showToast(`נוסף רכיב חדש מסוג ${dragData.name || dragData.type}`, "success");
+      } else {
+        console.warn("Invalid drag data format or no type information", dragData);
       }
     } catch (error) {
       console.error('Error processing drop:', error);
-    }
-    
-    // ניקוי הנתונים בכל מקרה
-    localStorage.removeItem('dragData');
-  };
-
-  // פונקציה לתחילת גרירת סקשן קיים
-  const handleSectionDragStart = (e, section, index) => {
-    // שמירת נתוני הגרירה
-    const dragData = {
-      id: section.id,
-      type: section.type,
-      index: index
-    };
-    
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // גם שומרים ב-localStorage למקרה שנצטרך
-    localStorage.setItem('dragData', JSON.stringify(dragData));
-    
-    setIsDragging(true);
-    
-    // הוספת סגנון לאלמנט הנגרר
-    if (e.target) {
-      setTimeout(() => {
-        if (e.target) {
-          e.target.classList.add('dragging');
-        }
-      }, 0);
+      showToast && showToast("אירעה שגיאה בהוספת הרכיב", "error");
+    } finally {
+      // ניקוי נתוני גרירה בכל מקרה
+      localStorage.removeItem('dragData');
     }
   };
 
@@ -148,69 +174,103 @@ const Canvas = () => {
         onDragOver={(e) => handleDragOver(e, sections.length)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, sections.length)}
-        onDragEnd={handleDragEnd}
       >
-        {/* אזור שחרור עליון (כשאין סקשנים או בתחילת הרשימה) */}
-        {isDragging && (
-          <div 
-            className={`drop-zone ${activeDropZoneIndex === 0 ? 'active' : ''}`}
-            onDragOver={(e) => handleDragOver(e, 0)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 0)}
-          >
-            <div className="drop-zone-label">שחרר כאן להוספה בתחילת העמוד</div>
-          </div>
-        )}
+        {/* אזור שחרור עליון (בתחילת הרשימה) */}
+        <div 
+          className={`drop-zone ${isDragging ? 'visible' : ''} ${activeDropZoneIndex === 0 ? 'active' : ''}`}
+          onDragOver={(e) => handleDragOver(e, 0)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, 0)}
+        >
+          <div className="drop-zone-label">שחרר כאן להוספה בתחילת העמוד</div>
+        </div>
         
         {/* הסקשנים עם אזורי שחרור ביניהם */}
         {sections.map((section, index) => (
           <React.Fragment key={section.id}>
+            {/* סקשן */}
             <div
               className={`canvas-section ${selectedSectionId === section.id ? 'selected' : ''}`}
               onClick={() => setSelectedSectionId(section.id)}
-              draggable={true}
-              onDragStart={(e) => handleSectionDragStart(e, section, index)}
-              onDragEnd={handleDragEnd}
             >
-              <div className="section-handle">
-                <i className="drag-icon"></i>
-              </div>
+              {/* תוכן הסקשן */}
               <div className="section-content">
                 {renderSection(section)}
               </div>
+              
+              {/* כפתורי פעולה */}
               <div className="section-actions">
+                {/* כפתור להזזה למעלה */}
+                <button
+                  className="section-control-button move-up"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveSectionUp(index);
+                  }}
+                  disabled={index === 0}
+                  title="הזז למעלה"
+                >
+                  <FiArrowUp />
+                </button>
+                
+                {/* כפתור להזזה למטה */}
+                <button
+                  className="section-control-button move-down"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveSectionDown(index);
+                  }}
+                  disabled={index === sections.length - 1}
+                  title="הזז למטה"
+                >
+                  <FiArrowDown />
+                </button>
+                
+                {/* כפתור למחיקה */}
                 <button
                   className="delete-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (window.confirm('האם אתה בטוח שברצונך למחוק את הסקשן הזה?')) {
                       deleteSection(section.id);
+                      showToast && showToast("הסקשן נמחק בהצלחה", "success");
                     }
                   }}
+                  title="מחק"
                 >
-                  ✕
+                   <FiTrash2 size={28} />
                 </button>
               </div>
             </div>
             
-            {/* אזור שחרור לאחר כל סקשן (נראה רק בזמן גרירה) */}
-            {isDragging && (
-              <div 
-                className={`drop-zone ${activeDropZoneIndex === index + 1 ? 'active' : ''}`}
-                onDragOver={(e) => handleDragOver(e, index + 1)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index + 1)}
-              >
-                <div className="drop-zone-label">שחרר כאן</div>
-              </div>
-            )}
+            {/* אזור שחרור אחרי הסקשן הנוכחי */}
+            <div 
+              className={`drop-zone ${isDragging ? 'visible' : ''} ${activeDropZoneIndex === index + 1 ? 'active' : ''}`}
+              onDragOver={(e) => handleDragOver(e, index + 1)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index + 1)}
+            >
+              <div className="drop-zone-label">שחרר כאן</div>
+            </div>
           </React.Fragment>
         ))}
         
-        {/* אם אין סקשנים ואין גרירה פעילה */}
+        {/* אם אין סקשנים, מציגים הודעה מתאימה */}
         {sections.length === 0 && !isDragging && (
           <div className="empty-canvas">
             <p>גרור רכיבים לכאן כדי ליצור את דף הבית שלך</p>
+          </div>
+        )}
+        
+        {/* אם אין סקשנים ויש גרירה, מציגים אזור שחרור גדול */}
+        {sections.length === 0 && isDragging && (
+          <div 
+            className="drop-zone-empty"
+            onDragOver={(e) => handleDragOver(e, 0)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, 0)}
+          >
+            <div className="drop-zone-label">שחרר כאן להוספת הרכיב</div>
           </div>
         )}
       </div>
