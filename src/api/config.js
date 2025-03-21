@@ -1,5 +1,5 @@
 // src/api/config.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/builder/api';
+const API_BASE_URL = 'https://quick-shop.co.il/builder/api';
 
 export const API_ENDPOINTS = {
   LOAD: `${API_BASE_URL}/load.php`,

@@ -61,13 +61,34 @@ const builderService = {
   },
   
   // פרסום התוכן
-  publishData: async (storeId, structure) => {
+  // פרסום התוכן - גרסה מתוקנת
+publishData: async (storeId, structure) => {
     try {
-      // קודם שומרים את התוכן
-   // קודם שומרים את התוכן
-   await builderService.saveData(storeId, structure);  // שימוש ישיר באובייקט builderService
+      // קודם נשמור את המבנה (הימנע משימוש ישיר באובייקט)
+      try {
+        const saveResponse = await fetch(API_ENDPOINTS.SAVE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            store_id: storeId,
+            structure: structure,
+            render: false
+          })
+        });
+        
+        if (!saveResponse.ok) {
+          console.warn(`שמירה נכשלה: ${saveResponse.status}`);
+          // נמשיך בכל זאת לנסות לפרסם
+        }
+      } catch (saveError) {
+        console.warn('שגיאה בשמירה לפני פרסום:', saveError);
+        // נמשיך בכל זאת
+      }
       
-      // אחר כך מפרסמים אותו
+      // עכשיו ננסה לפרסם
       const response = await fetch(API_ENDPOINTS.PUBLISH, {
         method: 'POST',
         headers: {
@@ -76,23 +97,24 @@ const builderService = {
         credentials: 'include',
         body: JSON.stringify({
           store_id: storeId,
+          structure: structure, // שלח את המבנה ישירות במקום להסתמך על שמירה קודמת
           render: true
         })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`שגיאת HTTP! סטטוס: ${response.status}`);
       }
       
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || 'Unknown error');
+        throw new Error(data.error || 'שגיאה לא ידועה');
       }
       
       return data;
     } catch (error) {
-      console.error('Error publishing data:', error);
+      console.error('שגיאת פרסום:', error);
       throw error;
     }
   },

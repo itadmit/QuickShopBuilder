@@ -1983,6 +1983,7 @@ input:checked + .switch-slider:before {
 
 input:checked + .switch-slider {
   background-color: #7536ff;
+  width: fit-content;
 }
 
 input:checked + .switch-slider:before {
@@ -4822,4 +4823,59 @@ body.dragging .drop-zone-empty {
 
 .toast-notification.info {
   background-color: #3498db;
+}
+
+/* === בקרות מרווחים (ספייסינג) === */
+.spacing-control {
+  margin-bottom: 20px;
+}
+
+.spacing-label {
+  font-weight: 500;
+  color: var(--dark-text);
+  margin-bottom: 8px;
+}
+
+.spacing-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.spacing-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spacing-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.spacing-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+/* === כותרות קבוצות === */
+.property-group-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  color: var(--dark-text);
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* === בקרת ניראות במכשירים === */
+.device-visibility {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
 }

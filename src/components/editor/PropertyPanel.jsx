@@ -5,6 +5,13 @@ import ColorPicker from './controls/ColorPicker';
 import ImagePicker from './controls/ImagePicker';
 import RangeSlider from './controls/RangeSlider';
 import SwitchControl from './controls/SwitchControl';
+// הוספת ייבוא לקומפוננטות החדשות
+import { 
+  SpacingControl, 
+  DeviceVisibilityControl, 
+  CustomIdentifiers, 
+  AnimationControl 
+} from './controls/CommonControls';
 
 const PropertyPanel = () => {
   const { selectedSection, updateSection, deleteSection } = useEditor();
@@ -73,6 +80,89 @@ const PropertyPanel = () => {
       </div>
     );
   };
+
+    const renderSettingsTab = () => {
+    return (
+      <>
+        <CustomIdentifiers 
+          customId={selectedSection.customId} 
+          customClass={selectedSection.customClass}
+          onChange={handleChange}
+        />
+        
+        <div className="property-group-title">ניראות במכשירים</div>
+        <DeviceVisibilityControl 
+          values={{
+            showOnDesktop: selectedSection.showOnDesktop,
+            showOnTablet: selectedSection.showOnTablet,
+            showOnMobile: selectedSection.showOnMobile
+          }}
+          onChange={(newValues) => {
+            Object.entries(newValues).forEach(([key, value]) => {
+              handleChange(key, value);
+            });
+          }}
+        />
+        
+        <div className="property-group-title">מרווחים</div>
+        <SpacingControl 
+          type="margin"
+          values={{
+            top: selectedSection.marginTop || '',
+            right: selectedSection.marginRight || '',
+            bottom: selectedSection.marginBottom || '',
+            left: selectedSection.marginLeft || ''
+          }}
+          onChange={(newValues) => {
+            handleChange('marginTop', newValues.top);
+            handleChange('marginRight', newValues.right);
+            handleChange('marginBottom', newValues.bottom);
+            handleChange('marginLeft', newValues.left);
+          }}
+        />
+        
+        <SpacingControl 
+          type="padding"
+          values={{
+            top: selectedSection.paddingTop || '',
+            right: selectedSection.paddingRight || '',
+            bottom: selectedSection.paddingBottom || '',
+            left: selectedSection.paddingLeft || ''
+          }}
+          onChange={(newValues) => {
+            handleChange('paddingTop', newValues.top);
+            handleChange('paddingRight', newValues.right);
+            handleChange('paddingBottom', newValues.bottom);
+            handleChange('paddingLeft', newValues.left);
+          }}
+        />
+        
+        <div className="property-group-title">אנימציה</div>
+        <AnimationControl 
+          animation={selectedSection.animation}
+          duration={selectedSection.animationDuration}
+          delay={selectedSection.animationDelay}
+          onChange={handleChange}
+        />
+        
+        <div className="property-actions">
+          <button 
+            className="duplicate-button"
+            onClick={handleDuplicate}
+          >
+            <FiCopy /> שכפל סקשן
+          </button>
+          <button 
+            className="delete-button"
+            onClick={handleDelete}
+          >
+            <FiTrash2 /> מחק סקשן
+          </button>
+        </div>
+      </>
+    );
+  };
+
 
   // רינדור השדות המותאמים לטאב הפעיל
   const renderFields = () => {
@@ -547,74 +637,7 @@ const PropertyPanel = () => {
     } 
     // טאב הגדרות
     else if (activeTab === 'settings') {
-      return (
-        <>
-          <div className="property-group">
-            <label className="property-label">מזהה CSS מותאם אישית</label>
-            <input
-              type="text"
-              className="text-input"
-              value={selectedSection.customId || ''}
-              onChange={(e) => handleChange('customId', e.target.value)}
-              placeholder="section-1"
-            />
-            <small>משמש לקישור ישיר לסקשן זה</small>
-          </div>
-          
-          <div className="property-group">
-            <SwitchControl
-              label="הצג בנייד"
-              checked={selectedSection.showOnMobile !== false}
-              onChange={(checked) => handleChange('showOnMobile', checked)}
-            />
-          </div>
-          
-          <div className="property-group">
-            <SwitchControl
-              label="הצג בטאבלט"
-              checked={selectedSection.showOnTablet !== false}
-              onChange={(checked) => handleChange('showOnTablet', checked)}
-            />
-          </div>
-          
-          <div className="property-group">
-            <SwitchControl
-              label="הצג במחשב"
-              checked={selectedSection.showOnDesktop !== false}
-              onChange={(checked) => handleChange('showOnDesktop', checked)}
-            />
-          </div>
-          
-          <div className="property-group">
-            <label className="property-label">אנימציה</label>
-            <select
-              className="select-input"
-              value={selectedSection.animation || 'none'}
-              onChange={(e) => handleChange('animation', e.target.value)}
-            >
-              <option value="none">ללא</option>
-              <option value="fade">Fade In</option>
-              <option value="slideUp">Slide Up</option>
-              <option value="slideDown">Slide Down</option>
-            </select>
-          </div>
-          
-          <div className="property-actions">
-            <button 
-              className="duplicate-button"
-              onClick={handleDuplicate}
-            >
-              <FiCopy /> שכפל סקשן
-            </button>
-            <button 
-              className="delete-button"
-              onClick={handleDelete}
-            >
-              <FiTrash2 /> מחק סקשן
-            </button>
-          </div>
-        </>
-      );
+      return renderSettingsTab();
     }
   };
 
