@@ -2,6 +2,7 @@
   "name": "homepage-builder",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/builder/static",
   "dependencies": {
     "@chakra-ui/react": "^3.13.0",
     "@emotion/react": "^11.14.0",
@@ -10,6 +11,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.6.7",
     "framer-motion": "^12.5.0",
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",
@@ -24,9 +26,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && node scripts/postbuild.js",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && node scripts/deploy.js"
   },
   "eslintConfig": {
     "extends": [
@@ -45,5 +48,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "proxy": "http://localhost:80",
+  "devDependencies": {
+    "fs-extra": "^11.2.0"
   }
 }

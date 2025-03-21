@@ -4488,3 +4488,338 @@ body.dragging .drop-zone-empty {
 .canvas-section.selected {
   box-shadow: 0 0 0 2px var(--primary-color, #5271ff), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* סגנונות לתצוגה מקדימה - להוסיף לקובץ modern-editor.css */
+
+/* מסך רקע מלא */
+.preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+}
+
+/* מודל התצוגה המקדימה */
+.preview-modal {
+  background-color: white;
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 95%;
+  height: 90vh;
+  max-width: 1500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: preview-slide-in 0.3s ease;
+}
+
+@keyframes preview-slide-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* כותרת וסרגל כלים עליון */
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: var(--panel-bg, #ffffff);
+  border-bottom: 1px solid var(--border-color, #e4e6eb);
+  z-index: 10;
+}
+
+.preview-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--dark-text, #202123);
+}
+
+/* בורר מכשירים */
+.device-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+  background-color: var(--secondary-color, #f8f9fb);
+  border-radius: var(--radius-md, 8px);
+}
+
+.device-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--light-text, #65676b);
+  border-radius: var(--radius-sm, 6px);
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.device-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.device-button.active {
+  background-color: white;
+  color: var(--primary-color, #5271ff);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.device-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* כפתור סגירה */
+.preview-close-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--light-text, #65676b);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preview-close-button:hover {
+  background-color: var(--secondary-color, #f8f9fb);
+  color: var(--dark-text, #202123);
+}
+
+.preview-close-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* אזור התוכן של התצוגה המקדימה */
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  transition: all 0.3s ease;
+}
+
+/* מכיל את כל הסקשנים - במצב דסקטופ מלא, טאבלט וניייד מרכוז */
+.preview-container {
+  background-color: white; /* ברירת מחדל לבן */
+  transition: all 0.3s ease;
+}
+
+/* התאמות למכשירים שונים */
+.preview-desktop .preview-container {
+  width: 100%; /* רוחב מלא במצב מחשב */
+}
+
+.preview-tablet {
+  background-color: #f5f5f7; /* רקע אפור רק במצב טאבלט/נייד */
+  justify-content: center; /* ממרכזים */
+  padding: 20px;
+}
+
+.preview-tablet .preview-container {
+  width: 768px !important;
+
+  border: 12px solid #303030;
+  border-radius: 12px;
+  overflow: hidden;
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+.preview-mobile {
+  background-color: #f5f5f7; /* רקע אפור רק במצב טאבלט/נייד */
+  justify-content: center; /* ממרכזים */
+  padding: 20px;
+}
+
+.preview-mobile .preview-container {
+  width: 375px !important;
+  height: 70vh;
+  border: 16px solid #303030;
+  border-radius: 24px;
+  border-bottom: 60px solid;
+  overflow-x: hidden;
+  position: relative;
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+/* נוטץ' בתצוגת מובייל */
+.preview-mobile .preview-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 20px;
+  background-color: #303030;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  z-index: 2;
+}
+
+/* כפתור בית בתצוגת מובייל */
+.preview-mobile .preview-container::after {
+  content: '';
+  position: fixed;
+  bottom:125px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border: 2px solid #686868;
+  border-radius: 50%;
+  z-index: 2;
+
+}
+
+/* עיצוב הסקשנים בתצוגה המקדימה */
+.preview-section {
+  width: 100%;
+}
+
+/* הודעה כשאין סקשנים */
+.empty-preview-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 20px;
+  text-align: center;
+  color: var(--light-text, #65676b);
+}
+
+.empty-preview-message p {
+  max-width: 400px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* src/styles/publish-modal.css */
+
+.publish-modal-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.progress-container {
+  margin: 20px 0;
+}
+
+.progress-bar {
+  height: 10px;
+  background-color: #f0f0f5;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #7536ff;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}
+
+.status-message {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* כפתורים במצב טעינה */
+.button-primary.loading,
+.button-secondary.loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.button-primary.loading::after,
+.button-secondary.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s infinite linear;
+}
+
+.button-secondary.loading::after {
+  border: 2px solid rgba(117, 54, 255, 0.3);
+  border-top-color: #7536ff;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* טוסט הודעות */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.toast-notification.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-notification.success {
+  background-color: #47c479;
+}
+
+.toast-notification.error {
+  background-color: #e74c3c;
+}
+
+.toast-notification.info {
+  background-color: #3498db;
+}

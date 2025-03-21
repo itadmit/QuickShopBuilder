@@ -1,6 +1,6 @@
 // EditorContext.jsx - תיקון בעיית reference לפונקציית showToast
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import mockData from '../mock-data/homepage-data.json';
+import builderService from '../api/builderService';
 
 // יצירת קונטקסט
 const EditorContext = createContext();
@@ -21,7 +21,14 @@ export function EditorProvider({ children }) {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragImageElement, setDragImageElement] = useState(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
-  
+  // בחלק העליון של הקומפוננטה, עם שאר משתני ה-state
+const [storeData, setStoreData] = useState({
+  storeId: window.SERVER_DATA?.storeId || null,
+  storeName: window.SERVER_DATA?.storeName || '',
+  storeSlug: window.SERVER_DATA?.storeSlug || '',
+  userId: window.SERVER_DATA?.userId || null,
+  apiBasePath: window.SERVER_DATA?.apiBasePath || '/builder/api'
+});
   // מידע על הגרירה הנוכחית
   const dragInfo = useRef({
     startX: 0,
@@ -71,7 +78,7 @@ export function EditorProvider({ children }) {
         subtitle: 'כותרת משנה',
         buttonText: 'קנה עכשיו',
         buttonLink: '/collections/all',
-        backgroundImage: '/images/placeholders/hero-bg.jpg',
+        backgroundImage: '/builder/build/images/placeholders/hero-bg.jpg',
       },
       products: {
         id,
@@ -87,14 +94,14 @@ export function EditorProvider({ children }) {
         subtitle: 'הנחה של 20% על כל החנות',
         buttonText: 'למבצע',
         buttonLink: '/collections/sale',
-        backgroundImage: '/images/placeholders/banner-bg.jpg',
+        backgroundImage: '/builder/build/images/placeholders/banner-bg.jpg',
       },
       'text-image': {
         id,
         type: 'text-image',
         title: 'על החנות שלנו',
         content: 'כאן מופיע תוכן טקסטואלי על החנות',
-        image: '/images/placeholders/about-img.jpg',
+        image: '/builder/build/images/placeholders/about-img.jpg',
         imagePosition: 'right',
       },
       testimonials: {
@@ -460,29 +467,48 @@ export function EditorProvider({ children }) {
 
   // שמירת המבנה הנוכחי
   const saveLayout = useCallback(async () => {
-    // יש להשלים את הלוגיקה
-    console.log('saving layout');
-  }, [sections]);
-
-  // טעינת המבנה
-  const loadLayout = useCallback(async () => {
-    // יש להשלים את הלוגיקה
-    console.log('loading layout');
-    
-    // לצורך הדוגמה, נטען נתונים ממוקאפ
     try {
-      // במציאות כאן תהיה קריאת API
-      setTimeout(() => {
-        if (mockData && mockData.sections) {
-          setSections(mockData.sections);
-          showToast('הלייאאוט נטען בהצלחה', 'success');
-        }
-      }, 500);
+      setIsLoading(true);
+      
+      // השתמש בשירות API החדש
+      const result = await builderService.saveData(window.SERVER_DATA.storeId, sections);
+      
+      // הצגת הודעת הצלחה
+      showToast('נשמר בהצלחה');
+      
+      return result;
     } catch (error) {
-      console.error('Error loading layout:', error);
-      showToast('שגיאה בטעינת הלייאאוט', 'error');
+      console.error('Save error:', error);
+      showToast(`שגיאה בשמירה: ${error.message}`, 'error');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }, [showToast]);
+  }, [sections, showToast]);
+  
+  // עדכון פונקציית הפרסום (חדשה)
+  const publishLayout = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!storeData.storeId) {
+        throw new Error('מזהה חנות לא נמצא');
+      }
+      
+      // קריאה לפונקציית פרסום בשירות
+      const result = await builderService.publishData(storeData.storeId, sections);
+      
+      showToast('פורסם בהצלחה', 'success');
+      return result;
+    } catch (error) {
+      console.error('Publish error:', error);
+      showToast(`שגיאה בפרסום: ${error.message}`, 'error');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sections, storeData, showToast]);
+  
 
   // פונקציה עזר - קבלת שם מותאם של הסקשן
   function getSectionName(type) {
@@ -499,6 +525,66 @@ export function EditorProvider({ children }) {
     return sectionNames[type] || type;
   }
 
+
+  const loadLayout = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // בדיקה שיש מזהה חנות
+      if (!window.SERVER_DATA?.storeId) {
+        console.error('No store ID provided');
+        setIsLoading(false);
+        return;
+      }
+      
+      // השתמש בשירות API החדש
+      const data = await builderService.loadData(window.SERVER_DATA.storeId);
+      
+      if (data && Array.isArray(data)) {
+        setSections(data);
+      } else {
+        setSections([]); // מבנה ריק אם אין נתונים
+      }
+      
+    } catch (error) {
+      console.error('Load error:', error);
+      showToast(`שגיאה בטעינה: ${error.message}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showToast]);
+
+  const uploadImage = useCallback(async (file) => {
+    try {
+      if (!window.SERVER_DATA?.storeId) {
+        throw new Error('No store ID provided');
+      }
+      
+      const result = await builderService.uploadImage(window.SERVER_DATA.storeId, file);
+      return result.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast(`שגיאה בהעלאת תמונה: ${error.message}`, 'error');
+      throw error;
+    }
+  }, [showToast]);
+  
+  // מחיקת תמונה
+  const deleteImage = useCallback(async (imageUrl) => {
+    try {
+      if (!window.SERVER_DATA?.storeId) {
+        throw new Error('No store ID provided');
+      }
+      
+      await builderService.deleteImage(window.SERVER_DATA.storeId, imageUrl);
+      return true;
+    } catch (error) {
+      console.error('Delete image error:', error);
+      showToast(`שגיאה במחיקת תמונה: ${error.message}`, 'error');
+      throw error;
+    }
+  }, [showToast]);
+  
   // ערכים שיהיו זמינים לקומפוננטות
   const value = {
     sections,
@@ -519,6 +605,7 @@ export function EditorProvider({ children }) {
     deleteSection,
     reorderSections,
     saveLayout,
+    publishLayout,
     loadLayout,
     undo,
     redo,
