@@ -16,6 +16,16 @@ function App() {
     } else if (!window.SERVER_DATA.storeId) {
       console.error('Missing storeId in SERVER_DATA');
     }
+
+    if (!window.SERVER_DATA) {
+      window.SERVER_DATA = {
+        storeId: '1',  // ערך ברירת מחדל
+        storeName: 'חנות לדוגמה',
+        storeSlug: 'demo-store',
+        userId: '1',
+        apiBasePath: '/api'
+      };
+    }
     
     // הגדרת כותרת הדף לפי שם החנות
     if (window.SERVER_DATA?.storeName) {
