@@ -37,6 +37,112 @@ const openCategoryPicker = () => {
   setIsCategoryPickerOpen(true);
 };
 
+// החלק שמטפל בתצוגת המוצרים בפאנל ההגדרות - לשלב בקובץ PropertyPanel.jsx
+
+// פונקציה להתאמת נתיב התמונה - מוסיפה את ה-base URL החסר
+const getFullProductImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  // אם זו כבר URL מלאה, החזר אותה כמו שהיא
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // אם זה נתיב יחסי מהפרויקט שלנו
+  if (imageUrl.startsWith('/')) {
+    return imageUrl;
+  }
+  
+  // אחרת, זהו רק שם הקובץ - נוסיף את ה-base URL
+  const storeSlug = window.SERVER_DATA?.storeSlug || 'yogev';
+  return `https://quickshopil-storage.s3.amazonaws.com/uploads/${storeSlug}/${imageUrl}`;
+};
+
+// פונקציה לעיבוד מחירי וריאציות
+const processProductVariantPrices = async (product) => {
+  if (!product || !product.id) return product;
+  
+  try {
+    // אם יש כבר מחירים מעובדים, החזר את המוצר כפי שהוא
+    if (product.processedWithVariants) {
+      return product;
+    }
+    
+    // אם המוצר הוא מסוג וריאציה
+    if (product.product_type === 'variable') {
+      // אם יש כבר וריאציות מצורפות, השתמש בהן לחישוב המחיר
+      if (product.variations) {
+        let minRegularPrice = 0;
+        let minSalePrice = 0;
+        let isOnSale = false;
+        
+        // חישוב מחירים מינימליים
+        Object.values(product.variations).forEach(variants => {
+          variants.forEach(variant => {
+            if (variant.regular_price && (minRegularPrice === 0 || variant.regular_price < minRegularPrice)) {
+              minRegularPrice = parseFloat(variant.regular_price);
+            }
+            
+            if (variant.sale_price && (minSalePrice === 0 || variant.sale_price < minSalePrice)) {
+              minSalePrice = parseFloat(variant.sale_price);
+              isOnSale = true;
+            }
+          });
+        });
+        
+        // קביעת פורמט מחירים
+        const formattedRegularPrice = minRegularPrice ? `₪${minRegularPrice.toFixed(2)}` : '₪0.00';
+        const formattedSalePrice = minSalePrice ? `₪${minSalePrice.toFixed(2)}` : '';
+        
+        return {
+          ...product,
+          processedWithVariants: true,
+          display_regular_price: minRegularPrice,
+          display_sale_price: isOnSale ? minSalePrice : 0,
+          regular_price: minRegularPrice,
+          sale_price: isOnSale ? minSalePrice : 0,
+          price_formatted: formattedRegularPrice,
+          sale_price_formatted: formattedSalePrice,
+          is_on_sale: isOnSale
+        };
+      }
+      
+      // אם אין וריאציות מצורפות, נשיג אותן מה-API
+      try {
+        const productDetails = await productService.getProductById(product.id);
+        
+        if (productDetails && productDetails.variations) {
+          // עיבוד וריאציות המוצר
+          const processedProduct = processProductVariantPrices({
+            ...product,
+            variations: productDetails.variations
+          });
+          
+          return processedProduct;
+        }
+      } catch (variantError) {
+        console.error('Error fetching variant data:', variantError);
+      }
+    }
+    
+    // אם זה מוצר רגיל או לא הצלחנו להשיג וריאציות
+    return {
+      ...product,
+      processedWithVariants: true,
+      display_regular_price: product.regular_price || 0,
+      display_sale_price: product.sale_price || 0,
+      price_formatted: product.regular_price ? `₪${parseFloat(product.regular_price).toFixed(2)}` : '₪0.00',
+      sale_price_formatted: product.sale_price ? `₪${parseFloat(product.sale_price).toFixed(2)}` : '',
+      is_on_sale: product.sale_price && parseFloat(product.sale_price) < parseFloat(product.regular_price)
+    };
+    
+  } catch (error) {
+    console.error('Error processing product prices:', error);
+    return product;
+  }
+};
+
+// להחליף את הפונקציה הקיימת handleProductsSelected עם זו:
 const handleProductsSelected = async (selectedProducts) => {
   // בדיקה אם יש פרטים חסרים שצריך להשלים
   const productsToFetch = selectedProducts.filter(product => !product.name);
@@ -51,7 +157,7 @@ const handleProductsSelected = async (selectedProducts) => {
       );
       
       // שילוב פרטי המוצרים עם המוצרים שנבחרו
-      const updatedProducts = selectedProducts.map(product => {
+      let updatedProducts = selectedProducts.map(product => {
         if (!product.name) {
           // חיפוש הפרטים עבור המוצר הזה
           const details = productDetails.find(p => p.id === product.id);
@@ -62,17 +168,30 @@ const handleProductsSelected = async (selectedProducts) => {
               price: details.regular_price,
               sale_price: details.sale_price,
               image_url: details.image_url,
+              product_image: details.product_image,
               is_on_sale: details.is_on_sale,
               product_url: details.product_url,
               price_formatted: details.regular_price_formatted,
-              sale_price_formatted: details.sale_price_formatted
+              sale_price_formatted: details.sale_price_formatted,
+              badge_text: details.badge_text,
+              badge_color: details.badge_color,
+              product_type: details.product_type,
+              variations: details.variations,
+              is_out_of_stock: details.is_out_of_stock
             };
           }
         }
         return product;
       });
       
-      // עדכון הסקשן עם המוצרים החדשים
+      // עיבוד מחירי וריאציות לכל המוצרים
+      updatedProducts = await Promise.all(
+        updatedProducts.map(async (product) => {
+          return await processProductVariantPrices(product);
+        })
+      );
+      
+      // עדכון הסקשן עם המוצרים המעודכנים
       updateSection(selectedSection.id, { products: updatedProducts });
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -80,10 +199,27 @@ const handleProductsSelected = async (selectedProducts) => {
       setLoadingProductDetails(false);
     }
   } else {
-    // אם לכל המוצרים כבר יש פרטים מלאים
-    updateSection(selectedSection.id, { products: selectedProducts });
+    // אם לכל המוצרים כבר יש פרטים מלאים, עדיין צריכים לעדכן מחירי וריאציות
+    try {
+      setLoadingProductDetails(true);
+      
+      // עיבוד מחירי וריאציות לכל המוצרים
+      const updatedProducts = await Promise.all(
+        selectedProducts.map(async (product) => {
+          return await processProductVariantPrices(product);
+        })
+      );
+      
+      // עדכון הסקשן עם המוצרים המעודכנים
+      updateSection(selectedSection.id, { products: updatedProducts });
+    } catch (error) {
+      console.error('Error processing product prices:', error);
+    } finally {
+      setLoadingProductDetails(false);
+    }
   }
 };
+
 
 // פונקציה לטיפול בבחירת קטגוריות
 const handleCategoriesSelected = async (selectedCategories) => {
@@ -271,45 +407,93 @@ const handleCategoriesSelected = async (selectedCategories) => {
                 </button>
                 
                 {loadingProductDetails ? (
-                  <div className="loading-message">טוען פרטי מוצרים...</div>
-                ) : selectedSection.products && selectedSection.products.length > 0 ? (
-                  <div className="selected-items">
-                    {selectedSection.products.map(product => (
-                      <div key={product.id} className="selected-item">
-                        <div className="selected-item-image">
-                          {product.image_url && (
-                            <img src={product.image_url} alt={product.name} />
-                          )}
-                        </div>
-                        <div className="selected-item-info">
-                          <span className="selected-item-name">{product.name}</span>
-                          <span className="selected-item-price">
-                            {product.is_on_sale ? (
-                              <>
-                                <span className="original-price">{product.price_formatted}</span>
-                                <span className="sale-price">{product.sale_price_formatted}</span>
-                              </>
-                            ) : (
-                              <span>{product.price_formatted}</span>
-                            )}
-                          </span>
-                        </div>
-                        <button 
-                          className="remove-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const updatedProducts = selectedSection.products.filter(p => p.id !== product.id);
-                            handleChange('products', updatedProducts);
-                          }}
-                        >
-                          <FiX />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="empty-selection">לא נבחרו מוצרים (יוצגו המוצרים העדכניים ביותר)</p>
-                )}
+  <div className="loading-message">טוען פרטי מוצרים...</div>
+) : selectedSection.products && selectedSection.products.length > 0 ? (
+  <div className="selected-items">
+    {selectedSection.products.map(product => (
+      <div key={product.id} className="selected-item">
+        <div className="selected-item-image">
+          {(product.image_url || product.product_image) && (
+            <img 
+              src={getFullProductImageUrl(product.image_url || product.product_image)} 
+              alt={product.name} 
+              onError={(e) => {
+                console.error('Error loading image in property panel:', product.image_url || product.product_image);
+                e.target.src = "/builder/build/images/placeholders/no-image.jpg";
+              }}
+            />
+          )}
+        </div>
+        <div className="selected-item-info">
+          <span className="selected-item-name">{product.name}</span>
+          <div className="selected-item-details">
+            <span className="selected-item-price">
+              {product.is_on_sale ? (
+                <>
+                  <span className="original-price">{product.price_formatted}</span>
+                  <span className="sale-price">{product.sale_price_formatted}</span>
+                </>
+              ) : (
+                <span>{product.price_formatted || `₪${product.display_regular_price?.toFixed(2) || product.regular_price || '0.00'}`}</span>
+              )}
+            </span>
+            {product.product_type === 'variable' && (
+              <span className="product-type-badge" style={{
+                display: 'inline-block',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                backgroundColor: '#f0f0f0',
+                color: '#666',
+                marginLeft: '5px'
+              }}>
+                וריאציות
+              </span>
+            )}
+            {product.badge_text && (
+              <span className="product-badge" style={{
+                display: 'inline-block',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                backgroundColor: product.badge_color || '#000',
+                color: '#fff',
+                marginLeft: '5px'
+              }}>
+                {product.badge_text}
+              </span>
+            )}
+            {product.is_out_of_stock && (
+              <span className="out-of-stock-badge" style={{
+                display: 'inline-block',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                backgroundColor: '#6c757d',
+                color: '#fff',
+                marginLeft: '5px'
+              }}>
+                אזל מהמלאי
+              </span>
+            )}
+          </div>
+        </div>
+        <button 
+          className="remove-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const updatedProducts = selectedSection.products.filter(p => p.id !== product.id);
+            handleChange('products', updatedProducts);
+          }}
+        >
+          <FiX />
+        </button>
+      </div>
+    ))}
+  </div>
+) : (
+  <p className="empty-selection">לא נבחרו מוצרים (יוצגו המוצרים העדכניים ביותר)</p>
+)}
               </div>
               
               {/* רכיב הבחירה */}

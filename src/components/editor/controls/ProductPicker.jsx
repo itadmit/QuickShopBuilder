@@ -205,17 +205,30 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
   };
 
   // פונקציה לתיקון נתיבי תמונות - מתמודדת עם המקרה של תמונות חסרות
-  const getFixedImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
-    
-    // בדיקה אם מדובר בתמונת placeholder שמגיעה מהמסד נתונים המדומה
-    if (imageUrl.includes('/placeholders/product')) {
-      // החלפה לנתיב שעובד בפרויקט שלנו
-      return `/builder/build/images/placeholders/product${imageUrl.charAt(imageUrl.length - 5)}.jpg`;
-    }
-    
+// פונקציה לתיקון נתיבי תמונות - מתמודדת עם המקרה של תמונות חסרות
+const getFixedImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  
+  // בדיקה אם מדובר בתמונת placeholder שמגיעה מהמסד נתונים המדומה
+  if (imageUrl.includes('/placeholders/product')) {
+    // החלפה לנתיב שעובד בפרויקט שלנו
+    return `/builder/build/images/placeholders/product${imageUrl.charAt(imageUrl.length - 5)}.jpg`;
+  }
+  
+  // אם זו כבר URL מלאה, החזר אותה כמו שהיא
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
-  };
+  }
+  
+  // אם זה נתיב יחסי מהפרויקט שלנו
+  if (imageUrl.startsWith('/')) {
+    return imageUrl;
+  }
+  
+  // אחרת, זהו רק שם הקובץ - נוסיף את ה-base URL
+  const storeSlug = window.SERVER_DATA?.storeSlug || 'yogev';
+  return `https://quickshopil-storage.s3.amazonaws.com/uploads/${storeSlug}/${imageUrl}`;
+};
 
   // טיפול בסגירת המודל כשלוחצים מחוץ לתוכן
   const handleOverlayClick = (e) => {

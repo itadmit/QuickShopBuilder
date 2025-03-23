@@ -6322,3 +6322,6 @@ body.dragging .drop-zone-empty {
 .font-select option {
   padding: 8px;
 }
+.property-group img {
+  max-width: 45px;
+}
