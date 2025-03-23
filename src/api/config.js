@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   // נקודות קצה קיימות 
   LOAD: `${API_BASE_URL}/load.php`,
   SAVE: `${API_BASE_URL}/save.php`,
-  PUBLISH: `${API_BASE_URL}/publish.php`,
+  PUBLISH: `${API_BASE_URL}/publish-s3.php`,
   
   // נקודות קצה חדשות לניהול מדיה
   MEDIA_LIST: `${API_BASE_URL}/media/list.php`,

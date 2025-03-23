@@ -6,6 +6,10 @@ import ImagePicker from './controls/ImagePicker';
 import RangeSlider from './controls/RangeSlider';
 import SwitchControl from './controls/SwitchControl';
 import SelectControl from './controls/SelectControl';
+import ProductPicker from './controls/ProductPicker';
+import CategoryPicker from './controls/CategoryPicker';
+import productService from '../../api/productService';
+
 // Import common controls
 import { 
   SpacingControl, 
@@ -19,6 +23,109 @@ import {
 const PropertyPanel = () => {
   const { selectedSection, updateSection, deleteSection } = useEditor();
   const [activeTab, setActiveTab] = useState('content'); // 'content', 'style', 'settings'
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [loadingProductDetails, setLoadingProductDetails] = useState(false);
+  const [loadingCategoryDetails, setLoadingCategoryDetails] = useState(false);
+  // פונקציה לפתיחת חלון בחירת מוצרים
+const openProductPicker = () => {
+  setIsProductPickerOpen(true);
+};
+
+// פונקציה לפתיחת חלון בחירת קטגוריות
+const openCategoryPicker = () => {
+  setIsCategoryPickerOpen(true);
+};
+
+const handleProductsSelected = async (selectedProducts) => {
+  // בדיקה אם יש פרטים חסרים שצריך להשלים
+  const productsToFetch = selectedProducts.filter(product => !product.name);
+  
+  if (productsToFetch.length > 0) {
+    try {
+      setLoadingProductDetails(true);
+      
+      // השלמת פרטי המוצרים החסרים במקביל
+      const productDetails = await Promise.all(
+        productsToFetch.map(product => productService.getProductById(product.id))
+      );
+      
+      // שילוב פרטי המוצרים עם המוצרים שנבחרו
+      const updatedProducts = selectedProducts.map(product => {
+        if (!product.name) {
+          // חיפוש הפרטים עבור המוצר הזה
+          const details = productDetails.find(p => p.id === product.id);
+          if (details) {
+            return {
+              id: details.id,
+              name: details.name,
+              price: details.regular_price,
+              sale_price: details.sale_price,
+              image_url: details.image_url,
+              is_on_sale: details.is_on_sale,
+              product_url: details.product_url,
+              price_formatted: details.regular_price_formatted,
+              sale_price_formatted: details.sale_price_formatted
+            };
+          }
+        }
+        return product;
+      });
+      
+      // עדכון הסקשן עם המוצרים החדשים
+      updateSection(selectedSection.id, { products: updatedProducts });
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+    } finally {
+      setLoadingProductDetails(false);
+    }
+  } else {
+    // אם לכל המוצרים כבר יש פרטים מלאים
+    updateSection(selectedSection.id, { products: selectedProducts });
+  }
+};
+
+// פונקציה לטיפול בבחירת קטגוריות
+const handleCategoriesSelected = async (selectedCategories) => {
+  // בדיקה אם יש פרטים חסרים שצריך להשלים
+  const categoriesToFetch = selectedCategories.filter(category => !category.name);
+  
+  if (categoriesToFetch.length > 0) {
+    try {
+      setLoadingCategoryDetails(true);
+      
+      // השלמת פרטי הקטגוריות
+      const categoriesData = await productService.getCategories();
+      
+      // שילוב פרטי הקטגוריות עם הקטגוריות שנבחרו
+      const updatedCategories = selectedCategories.map(category => {
+        if (!category.name) {
+          // חיפוש הפרטים עבור הקטגוריה הזו
+          const details = categoriesData.find(c => c.id === category.id);
+          if (details) {
+            return {
+              id: details.id,
+              name: details.name,
+              products_count: details.products_count,
+              image_url: details.image_url // אם יש
+            };
+          }
+        }
+        return category;
+      });
+      
+      // עדכון הסקשן עם הקטגוריות החדשות
+      updateSection(selectedSection.id, { collections: updatedCategories });
+    } catch (error) {
+      console.error('Error fetching category details:', error);
+    } finally {
+      setLoadingCategoryDetails(false);
+    }
+  } else {
+    // אם לכל הקטגוריות כבר יש פרטים מלאים
+    updateSection(selectedSection.id, { collections: selectedCategories });
+  }
+};
 
   // If no section is selected, show empty state
   if (!selectedSection) {
@@ -133,7 +240,88 @@ const PropertyPanel = () => {
           </>
         );
       
-      case 'products':
+        case 'products':
+          return (
+            <>
+              <div className="property-group">
+                <label className="property-label">כותרת</label>
+                <input
+                  type="text"
+                  className="text-input"
+                  value={selectedSection.title || ''}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                />
+              </div>
+              <div className="property-group">
+                <label className="property-label">מספר מוצרים להצגה</label>
+                <RangeSlider
+                  min={2}
+                  max={12}
+                  value={selectedSection.count || 4}
+                  onChange={(value) => handleChange('count', value)}
+                />
+              </div>
+              <div className="property-group">
+                <label className="property-label">בחירת מוצרים</label>
+                <button 
+                  className="button-secondary product-select-button"
+                  onClick={openProductPicker}
+                >
+                  בחר מוצרים
+                </button>
+                
+                {loadingProductDetails ? (
+                  <div className="loading-message">טוען פרטי מוצרים...</div>
+                ) : selectedSection.products && selectedSection.products.length > 0 ? (
+                  <div className="selected-items">
+                    {selectedSection.products.map(product => (
+                      <div key={product.id} className="selected-item">
+                        <div className="selected-item-image">
+                          {product.image_url && (
+                            <img src={product.image_url} alt={product.name} />
+                          )}
+                        </div>
+                        <div className="selected-item-info">
+                          <span className="selected-item-name">{product.name}</span>
+                          <span className="selected-item-price">
+                            {product.is_on_sale ? (
+                              <>
+                                <span className="original-price">{product.price_formatted}</span>
+                                <span className="sale-price">{product.sale_price_formatted}</span>
+                              </>
+                            ) : (
+                              <span>{product.price_formatted}</span>
+                            )}
+                          </span>
+                        </div>
+                        <button 
+                          className="remove-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const updatedProducts = selectedSection.products.filter(p => p.id !== product.id);
+                            handleChange('products', updatedProducts);
+                          }}
+                        >
+                          <FiX />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-selection">לא נבחרו מוצרים (יוצגו המוצרים העדכניים ביותר)</p>
+                )}
+              </div>
+              
+              {/* רכיב הבחירה */}
+              <ProductPicker
+                isOpen={isProductPickerOpen}
+                onClose={() => setIsProductPickerOpen(false)}
+                onSelect={handleProductsSelected}
+                selectedProductIds={selectedSection.products?.map(p => p.id) || []}
+              />
+            </>
+          );
+        
       case 'featured-products':
         return (
           <>
@@ -348,56 +536,76 @@ const PropertyPanel = () => {
           </>
         );
       
-      case 'collections':
-        return (
-          <>
-            <div className="property-group">
-              <label className="property-label">כותרת</label>
-              <input
-                type="text"
-                className="text-input"
-                value={selectedSection.title || ''}
-                onChange={(e) => handleChange('title', e.target.value)}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">מספר קטגוריות להצגה</label>
-              <RangeSlider
-                min={2}
-                max={6}
-                value={selectedSection.count || 3}
-                onChange={(value) => handleChange('count', value)}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">בחירת קטגוריות</label>
-              <button className="button-secondary" onClick={() => console.log('פתיחת חלון בחירת קטגוריות')}>
-                בחר קטגוריות
-              </button>
+        case 'collections':
+          return (
+            <>
+              <div className="property-group">
+                <label className="property-label">כותרת</label>
+                <input
+                  type="text"
+                  className="text-input"
+                  value={selectedSection.title || ''}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                />
+              </div>
+              <div className="property-group">
+                <label className="property-label">מספר קטגוריות להצגה</label>
+                <RangeSlider
+                  min={2}
+                  max={6}
+                  value={selectedSection.count || 3}
+                  onChange={(value) => handleChange('count', value)}
+                />
+              </div>
+              <div className="property-group">
+                <label className="property-label">בחירת קטגוריות</label>
+                <button 
+                  className="button-secondary category-select-button"
+                  onClick={openCategoryPicker}
+                >
+                  בחר קטגוריות
+                </button>
+                
+                {loadingCategoryDetails ? (
+                  <div className="loading-message">טוען פרטי קטגוריות...</div>
+                ) : selectedSection.collections && selectedSection.collections.length > 0 ? (
+                  <div className="selected-items">
+                    {selectedSection.collections.map(collection => (
+                      <div key={collection.id} className="selected-item">
+                        <div className="selected-item-info">
+                          <span className="selected-item-name">{collection.name}</span>
+                          <span className="products-count">
+                            {collection.products_count} מוצרים
+                          </span>
+                        </div>
+                        <button 
+                          className="remove-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const updatedCollections = selectedSection.collections.filter(c => c.id !== collection.id);
+                            handleChange('collections', updatedCollections);
+                          }}
+                        >
+                          <FiX />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-selection">לא נבחרו קטגוריות (יוצגו הקטגוריות העדכניות ביותר)</p>
+                )}
+              </div>
               
-              {selectedSection.collections && selectedSection.collections.length > 0 ? (
-                <div className="selected-items">
-                  {selectedSection.collections.map(collection => (
-                    <div key={collection.id} className="selected-item">
-                      <span>{collection.title}</span>
-                      <button 
-                        className="remove-button"
-                        onClick={() => {
-                          const updatedCollections = selectedSection.collections.filter(c => c.id !== collection.id);
-                          handleChange('collections', updatedCollections);
-                        }}
-                      >
-                        <FiX />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="empty-selection">לא נבחרו קטגוריות (יוצגו הקטגוריות העדכניות ביותר)</p>
-              )}
-            </div>
-          </>
-        );
+              {/* רכיב הבחירה */}
+              <CategoryPicker
+                isOpen={isCategoryPickerOpen}
+                onClose={() => setIsCategoryPickerOpen(false)}
+                onSelect={handleCategoriesSelected}
+                selectedCategoryIds={selectedSection.collections?.map(c => c.id) || []}
+              />
+            </>
+          );
+        
       
       case 'newsletter':
         return (

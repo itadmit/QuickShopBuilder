@@ -62,62 +62,38 @@ const builderService = {
   
   // פרסום התוכן
   // פרסום התוכן - גרסה מתוקנת
-publishData: async (storeId, structure) => {
+  publishData: async (storeId, structure) => {
     try {
-      // קודם נשמור את המבנה (הימנע משימוש ישיר באובייקט)
-      try {
-        const saveResponse = await fetch(API_ENDPOINTS.SAVE, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            store_id: storeId,
-            structure: structure,
-            render: false
-          })
+        // במקום להשתמש ב-this.saveData שלא עובד, שליחה ישירה לנקודת קצה של הפרסום
+        const response = await fetch(API_ENDPOINTS.PUBLISH, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                store_id: storeId,
+                structure: structure
+            })
         });
         
-        if (!saveResponse.ok) {
-          console.warn(`שמירה נכשלה: ${saveResponse.status}`);
-          // נמשיך בכל זאת לנסות לפרסם
+        if (!response.ok) {
+            throw new Error(`שגיאת HTTP! סטטוס: ${response.status}`);
         }
-      } catch (saveError) {
-        console.warn('שגיאה בשמירה לפני פרסום:', saveError);
-        // נמשיך בכל זאת
-      }
-      
-      // עכשיו ננסה לפרסם
-      const response = await fetch(API_ENDPOINTS.PUBLISH, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          store_id: storeId,
-          structure: structure, // שלח את המבנה ישירות במקום להסתמך על שמירה קודמת
-          render: true
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`שגיאת HTTP! סטטוס: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'שגיאה לא ידועה');
-      }
-      
-      return data;
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'שגיאה לא ידועה');
+        }
+        
+        return data;
     } catch (error) {
-      console.error('שגיאת פרסום:', error);
-      throw error;
+        console.error('שגיאת פרסום:', error);
+        throw error;
     }
-  },
+}
+,
   
   // העלאת תמונה לשרת
   uploadImage: async (storeId, file) => {

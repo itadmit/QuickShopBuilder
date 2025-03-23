@@ -496,6 +496,7 @@ const [storeData, setStoreData] = useState({
       }
       
       // קריאה לפונקציית פרסום בשירות
+      // שימוש ב-builderService.publishData באופן ישיר
       const result = await builderService.publishData(storeData.storeId, sections);
       
       showToast('פורסם בהצלחה', 'success');
@@ -508,6 +509,7 @@ const [storeData, setStoreData] = useState({
       setIsLoading(false);
     }
   }, [sections, storeData, showToast]);
+  
   
 
   // פונקציה עזר - קבלת שם מותאם של הסקשן
