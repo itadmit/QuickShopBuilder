@@ -1,4 +1,4 @@
-// src/api/productService.js
+// src/api/productService.js - תיקון בעיית נתיבי API
 import API_ENDPOINTS from './config';
 
 /**
@@ -33,11 +33,14 @@ const productService = {
       // קבלת הטוקן מהלוקל סטורג' או מהתצורה הגלובלית
       const token = localStorage.getItem('auth_token') || window.SERVER_DATA?.token;
       
+      // תיקון: שימוש בנתיב API הנכון מה-config
+      const apiBaseUrl = API_ENDPOINTS.API_BASE_URL || 'https://quick-shop.co.il/builder/api';
+      
       // שליחת הבקשה לשרת
-      const response = await fetch(`${API_ENDPOINTS.API_BASE_URL}/products.php?${queryParams.toString()}`, {
+      const response = await fetch(`${apiBaseUrl}/products.php?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         }
       });
@@ -69,11 +72,14 @@ const productService = {
       // קבלת הטוקן מהלוקל סטורג' או מהתצורה הגלובלית
       const token = localStorage.getItem('auth_token') || window.SERVER_DATA?.token;
       
+      // תיקון: שימוש בנתיב API הנכון מה-config
+      const apiBaseUrl = API_ENDPOINTS.API_BASE_URL || 'https://quick-shop.co.il/builder/api';
+      
       // שליחת הבקשה לשרת
-      const response = await fetch(`${API_ENDPOINTS.API_BASE_URL}/products.php?id=${productId}`, {
+      const response = await fetch(`${apiBaseUrl}/products.php?id=${productId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         }
       });
@@ -104,11 +110,14 @@ const productService = {
       // קבלת הטוקן מהלוקל סטורג' או מהתצורה הגלובלית
       const token = localStorage.getItem('auth_token') || window.SERVER_DATA?.token;
       
+      // תיקון: שימוש בנתיב API הנכון מה-config
+      const apiBaseUrl = API_ENDPOINTS.API_BASE_URL || 'https://quick-shop.co.il/builder/api';
+      
       // שליחת הבקשה לשרת
-      const response = await fetch(`${API_ENDPOINTS.API_BASE_URL}/categories.php`, {
+      const response = await fetch(`${apiBaseUrl}/categories.php`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         }
       });

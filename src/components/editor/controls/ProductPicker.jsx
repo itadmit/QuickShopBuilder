@@ -1,8 +1,37 @@
-// src/components/editor/controls/ProductPicker.jsx
+// src/components/editor/controls/ProductPicker.jsx - תיקון בעיית מיקום המודל
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiX, FiFilter, FiCheck, FiCheckSquare, FiSquare } from 'react-icons/fi';
+import { FiSearch, FiX, FiFilter, FiCheckSquare, FiSquare } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 import productService from '../../../api/productService';
+
+// סגנונות מודל חדשים לתיקון בעיית המיקום
+const modalStyles = {
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modal: {
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+    width: '90%',
+    maxWidth: '900px',
+    maxHeight: '85vh',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    position: 'relative',
+    zIndex: 1001,
+  }
+};
 
 const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) => {
   const [products, setProducts] = useState([]);
@@ -20,6 +49,26 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
   });
   const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState(null);
+  const [modalRoot, setModalRoot] = useState(null);
+
+  // יצירת אלמנט לפורטל רק פעם אחת
+  useEffect(() => {
+    // בדיקה אם האלמנט כבר קיים
+    let root = document.getElementById('product-picker-portal');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'product-picker-portal';
+      document.body.appendChild(root);
+    }
+    setModalRoot(root);
+
+    // ניקוי בעת unmount
+    return () => {
+      if (root && root.parentNode && root.childNodes.length === 0) {
+        document.body.removeChild(root);
+      }
+    };
+  }, []);
 
   // לוודא שיש לנו את ה-selectedProducts כאשר isOpen משתנה
   useEffect(() => {
@@ -35,17 +84,30 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
       
       // טעינת המוצרים
       loadProducts();
+
+      // מניעת גלילה ברקע כשהמודל פתוח
+      document.body.style.overflow = 'hidden';
+    } else {
+      // החזרת הגלילה כשהמודל נסגר
+      document.body.style.overflow = '';
     }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, selectedProductIds]);
 
   // טעינת קטגוריות
   const loadCategories = async () => {
     try {
+      setError(null);
       const categoriesData = await productService.getCategories();
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading categories:', error);
-      setError('שגיאה בטעינת קטגוריות');
+      setError('שגיאה בטעינת קטגוריות. אנא נסה שוב מאוחר יותר.');
+      // במקרה של שגיאה, נגדיר רשימת קטגוריות ריקה כדי שהממשק ימשיך לעבוד
+      setCategories([]);
     }
   };
 
@@ -79,7 +141,10 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
       
     } catch (error) {
       console.error('Error loading products:', error);
-      setError('שגיאה בטעינת מוצרים');
+      setError('שגיאה בטעינת מוצרים. אנא נסה שוב מאוחר יותר.');
+      // במקרה של שגיאה, ננקה את רשימת המוצרים
+      setProducts([]);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
@@ -139,13 +204,33 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
     onClose();
   };
 
-  // אם המודל סגור, לא מציגים כלום
-  if (!isOpen) return null;
+  // פונקציה לתיקון נתיבי תמונות - מתמודדת עם המקרה של תמונות חסרות
+  const getFixedImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // בדיקה אם מדובר בתמונת placeholder שמגיעה מהמסד נתונים המדומה
+    if (imageUrl.includes('/placeholders/product')) {
+      // החלפה לנתיב שעובד בפרויקט שלנו
+      return `/builder/build/images/placeholders/product${imageUrl.charAt(imageUrl.length - 5)}.jpg`;
+    }
+    
+    return imageUrl;
+  };
+
+  // טיפול בסגירת המודל כשלוחצים מחוץ לתוכן
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // אם המודל סגור או שאין root element, לא מציגים כלום
+  if (!isOpen || !modalRoot) return null;
 
   // יצירת פורטל עבור המודל
-  return createPortal(
-    <div className="modal-overlay">
-      <div className="product-selector-modal">
+  const modalContent = (
+    <div style={modalStyles.overlay} onClick={handleOverlayClick}>
+      <div style={modalStyles.modal} className="product-selector-modal">
         <div className="modal-header">
           <h2>בחירת מוצרים</h2>
           <button className="close-button" onClick={onClose}>
@@ -196,7 +281,7 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
                     <option value="">כל הקטגוריות</option>
                     {categories.map(category => (
                       <option key={category.id} value={category.id}>
-                        {category.name} ({category.products_count})
+                        {category.name} ({category.products_count || 0})
                       </option>
                     ))}
                   </select>
@@ -289,7 +374,14 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
                         
                         <div className="product-image">
                           {product.image_url ? (
-                            <img src={product.image_url} alt={product.name} />
+                            <img 
+                              src={getFixedImageUrl(product.image_url)} 
+                              alt={product.name}
+                              onError={(e) => {
+                                // במקרה של שגיאת טעינת תמונה, החלף לתמונת ברירת מחדל
+                                e.target.src = "/builder/build/images/placeholders/no-image.jpg";
+                              }}
+                            />
                           ) : (
                             <div className="no-image">אין תמונה</div>
                           )}
@@ -368,9 +460,10 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProductIds = [] }) =
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+
+  return createPortal(modalContent, modalRoot);
 };
 
 export default ProductPicker;

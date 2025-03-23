@@ -39,11 +39,23 @@ const ProductsSection = ({ data }) => {
     // מאפייני אנימציה
     animation, animationDuration, animationDelay
   } = data;
+  
+  // בדיקה וניקוי נתוני המוצרים
+  const validProducts = Array.isArray(products) ? products : [];
+  
+  console.log("ProductsSection: ", {
+    title,
+    productsLength: validProducts.length,
+    count,
+    sampleProduct: validProducts[0] || 'No products'
+  });
 
   // לייצר תצוגה של מוצרים ריקים אם אין מוצרים שנבחרו
-  const displayProducts = products.length > 0 
-    ? products.slice(0, count) 
-    : Array(count).fill(null);
+  // וידוא שה-count תמיד חיובי
+  const productCount = Math.max(1, count || 4);
+  const displayProducts = validProducts.length > 0 
+    ? validProducts.slice(0, productCount) 
+    : Array(productCount).fill(null);
 
   // סגנונות לקונטיינר
   const containerStyle = {
@@ -135,16 +147,27 @@ const ProductsSection = ({ data }) => {
               {product?.image_url && (
                 <img 
                   src={product.image_url} 
-                  alt={product.title} 
+                  alt={product.name || product.title || 'מוצר'} 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               )}
             </div>
             <h3 className="product-title" style={productTitleStyle}>
-              {product?.title || 'שם המוצר'}
+              {product?.name || product?.title || 'שם המוצר'}
             </h3>
             <div className="product-price" style={priceStyle}>
-              {product?.price ? `₪${product.price}` : '₪00.00'}
+              {product?.is_on_sale ? (
+                <>
+                  <span style={{textDecoration: 'line-through', marginLeft: '8px', fontSize: '14px', color: '#65676b'}}>
+                    {product.price_formatted || `₪${product.price}`}
+                  </span>
+                  <span style={{color: '#ff5252'}}>
+                    {product.sale_price_formatted || `₪${product.sale_price}`}
+                  </span>
+                </>
+              ) : (
+                product?.price_formatted || (product?.price ? `₪${product.price}` : '₪00.00')
+              )}
             </div>
           </div>
         ))}
