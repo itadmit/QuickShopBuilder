@@ -1,7 +1,7 @@
 // תיקון לקובץ Sidebar.jsx
 import React from 'react';
 import { useEditor } from '../../contexts/EditorContext';
-import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail } from 'react-icons/fi';
+import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail, FiVideo, FiBox, FiFileText} from 'react-icons/fi';
 
 // רכיב פריט גרירה משופר
 const DraggableItem = ({ component, icon }) => {
@@ -13,7 +13,8 @@ const DraggableItem = ({ component, icon }) => {
     const dragData = { 
       type: component.id, 
       name: component.name,
-      isNew: true
+      isNew: true,
+      isWidget: component.isWidget || false // סימון אם זה ווידג'ט או סקשן
     };
     
     // שמירה בשני סוגי פורמטים לתמיכה טובה יותר בדפדפנים שונים
@@ -75,12 +76,17 @@ const DraggableItem = ({ component, icon }) => {
 
   // הוספת רכיב באמצעות לחיצה פשוטה
   const handleClick = () => {
+    // אם זה ווידג'ט, אי אפשר להוסיף אותו ישירות לקנבס
+    if (component.isWidget) {
+      alert('ווידג\'טים ניתן להוסיף רק בגרירה לתוך שורת עמודות');
+      return;
+    }
     addSection(component.id);
   };
   
   return (
     <div
-      className="component-item"
+      className={`component-item ${component.isWidget ? 'widget-item' : ''}`}
       draggable="true"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -92,7 +98,9 @@ const DraggableItem = ({ component, icon }) => {
       <div className="component-name">
         {component.name}
       </div>
-      <div className="drag-hint">גרור או לחץ להוספה</div>
+      <div className="drag-hint">
+        {component.isWidget ? "גרור לתוך עמודה" : "גרור או לחץ להוספה"}
+      </div>
     </div>
   );
 };
@@ -115,6 +123,16 @@ const Sidebar = () => {
         return <FiColumns size={24} />;
       case 'newsletter':
         return <FiMail size={24} />;
+      case 'row':
+        return <FiColumns size={24} />;
+      case 'button':
+        return <FiBox size={24} />;
+      case 'image':
+        return <FiImage size={24} />;
+      case 'text':
+        return <FiFileText size={24} />;
+      case 'video':
+        return <FiVideo size={24} />;
       default:
         return <FiList size={24} />;
     }
@@ -129,6 +147,7 @@ const Sidebar = () => {
         { id: 'hero', name: 'כותרת ראשית' },
         { id: 'banner', name: 'באנר' },
         { id: 'text-image', name: 'טקסט ותמונה' },
+        { id: 'row', name: 'שורת עמודות' },
       ]
     },
     {
@@ -139,6 +158,16 @@ const Sidebar = () => {
         { id: 'testimonials', name: 'המלצות' },
         { id: 'collections', name: 'קטגוריות' },
         { id: 'newsletter', name: 'ניוזלטר' },
+      ]
+    },
+    {
+      id: 'widgets',
+      title: 'ווידג\'טים',
+      components: [
+        { id: 'button', name: 'כפתור', isWidget: true },
+        { id: 'image', name: 'תמונה', isWidget: true },
+        { id: 'text', name: 'טקסט', isWidget: true },
+        { id: 'video', name: 'וידאו', isWidget: true },
       ]
     }
   ];

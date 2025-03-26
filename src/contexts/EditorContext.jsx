@@ -21,14 +21,19 @@ export function EditorProvider({ children }) {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragImageElement, setDragImageElement] = useState(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
-  // בחלק העליון של הקומפוננטה, עם שאר משתני ה-state
-const [storeData, setStoreData] = useState({
-  storeId: window.SERVER_DATA?.storeId || null,
-  storeName: window.SERVER_DATA?.storeName || '',
-  storeSlug: window.SERVER_DATA?.storeSlug || '',
-  userId: window.SERVER_DATA?.userId || null,
-  apiBasePath: window.SERVER_DATA?.apiBasePath || '/builder/api'
-});
+  
+  // State חדש למעקב אחר ווידג'טים בתוך עמודות
+  const [selectedWidgetInfo, setSelectedWidgetInfo] = useState(null);
+  
+  // משתני state נוספים
+  const [storeData, setStoreData] = useState({
+    storeId: window.SERVER_DATA?.storeId || null,
+    storeName: window.SERVER_DATA?.storeName || '',
+    storeSlug: window.SERVER_DATA?.storeSlug || '',
+    userId: window.SERVER_DATA?.userId || null,
+    apiBasePath: window.SERVER_DATA?.apiBasePath || '/builder/api'
+  });
+  
   // מידע על הגרירה הנוכחית
   const dragInfo = useRef({
     startX: 0,
@@ -43,19 +48,15 @@ const [storeData, setStoreData] = useState({
     ? sections.find(section => section.id === selectedSectionId) 
     : null;
 
-  // פונקציה להצגת הודעות טוסט - חייבת להיות מוגדרת לפני שמשתמשים בה
+  // פונקציה להצגת הודעות טוסט
   const showToast = useCallback((message, type = 'info') => {
-    // יצירת אלמנט חדש להודעה
     const toast = document.createElement('div');
     toast.className = `toast-message ${type}`;
     toast.innerHTML = message;
     document.body.appendChild(toast);
     
-    // הצגת ההודעה עם אנימציה
     setTimeout(() => {
       toast.classList.add('visible');
-      
-      // הסרת ההודעה אחרי 3 שניות
       setTimeout(() => {
         toast.classList.remove('visible');
         setTimeout(() => {
@@ -65,11 +66,149 @@ const [storeData, setStoreData] = useState({
     }, 10);
   }, []);
   
+  // פונקציה למציאת ווידג'ט נבחר בתוך עמודות
+  const findSelectedWidget = useCallback(() => {
+    if (!selectedSectionId) return null;
+    
+    // במידה ויש מידע ב־selectedWidgetInfo, ננסה להשתמש בו
+    if (selectedWidgetInfo) {
+      const { parentSectionId, columnIndex, widgetIndex } = selectedWidgetInfo;
+      const parentSection = sections.find(section => section.id === parentSectionId);
+      if (parentSection && parentSection.columnsContent) {
+        const column = parentSection.columnsContent[columnIndex];
+        if (column && Array.isArray(column.widgets)) {
+          return column.widgets[widgetIndex] || null;
+        }
+      }
+    }
+    
+    // במידה ואין מידע קיים – חיפוש בכל הסקשנים (סוג "row")
+    for (const section of sections) {
+      if (section.type === 'row' && Array.isArray(section.columnsContent)) {
+        for (let colIndex = 0; colIndex < section.columnsContent.length; colIndex++) {
+          const column = section.columnsContent[colIndex];
+          if (column && Array.isArray(column.widgets)) {
+            for (let widgetIndex = 0; widgetIndex < column.widgets.length; widgetIndex++) {
+              const widget = column.widgets[widgetIndex];
+              if (widget && widget.id === selectedSectionId) {
+                setSelectedWidgetInfo({
+                  parentSectionId: section.id,
+                  columnIndex: colIndex,
+                  widgetIndex: widgetIndex
+                });
+                return widget;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // אם לא נמצא – איפוס מידע ווידג'ט
+    setSelectedWidgetInfo(null);
+    return null;
+  }, [selectedSectionId, sections, selectedWidgetInfo]);
+
+  // פונקציה לעדכון ווידג'ט בתוך עמודה
+  const updateWidgetInColumn = useCallback((widgetId, data) => {
+    if (!selectedWidgetInfo) {
+      for (const section of sections) {
+        if (section.type !== 'row' || !Array.isArray(section.columnsContent)) continue;
+        for (let colIndex = 0; colIndex < section.columnsContent.length; colIndex++) {
+          const column = section.columnsContent[colIndex];
+          if (!column || !Array.isArray(column.widgets)) continue;
+          for (let widgetIndex = 0; widgetIndex < column.widgets.length; widgetIndex++) {
+            const widget = column.widgets[widgetIndex];
+            if (widget && widget.id === widgetId) {
+              const newSections = [...sections];
+              const targetSection = newSections.find(s => s.id === section.id);
+              if (!targetSection) continue;
+              const updatedWidget = { ...widget, ...data };
+              targetSection.columnsContent[colIndex].widgets[widgetIndex] = updatedWidget;
+              setSections(newSections);
+              return;
+            }
+          }
+        }
+      }
+    } else {
+      const { parentSectionId, columnIndex, widgetIndex } = selectedWidgetInfo;
+      setSections(prevSections => {
+        return prevSections.map(section => {
+          if (section.id !== parentSectionId) return section;
+          if (!section.columnsContent || 
+              !section.columnsContent[columnIndex] || 
+              !Array.isArray(section.columnsContent[columnIndex].widgets) ||
+              !section.columnsContent[columnIndex].widgets[widgetIndex]) {
+            return section;
+          }
+          const newColumnsContent = [...section.columnsContent];
+          const newWidgets = [...newColumnsContent[columnIndex].widgets];
+          newWidgets[widgetIndex] = { ...newWidgets[widgetIndex], ...data };
+          newColumnsContent[columnIndex] = { ...newColumnsContent[columnIndex], widgets: newWidgets };
+          return { ...section, columnsContent: newColumnsContent };
+        });
+      });
+    }
+  }, [sections, selectedWidgetInfo]);
+
+  // פונקציה למחיקת ווידג'ט מעמודה
+  const deleteWidgetFromColumn = useCallback((widgetId) => {
+    if (!selectedWidgetInfo && !widgetId) return;
+    
+    if (!selectedWidgetInfo) {
+      for (const section of sections) {
+        if (section.type !== 'row' || !Array.isArray(section.columnsContent)) continue;
+        for (let colIndex = 0; colIndex < section.columnsContent.length; colIndex++) {
+          const column = section.columnsContent[colIndex];
+          if (!column || !Array.isArray(column.widgets)) continue;
+          const widgetIndex = column.widgets.findIndex(w => w.id === widgetId);
+          if (widgetIndex !== -1) {
+            setSections(prevSections => {
+              const newSections = [...prevSections];
+              const targetSection = newSections.find(s => s.id === section.id);
+              if (!targetSection) return prevSections;
+              const newColumnsContent = [...targetSection.columnsContent];
+              const newWidgets = [...newColumnsContent[colIndex].widgets];
+              newWidgets.splice(widgetIndex, 1);
+              newColumnsContent[colIndex] = { ...newColumnsContent[colIndex], widgets: newWidgets };
+              targetSection.columnsContent = newColumnsContent;
+              return newSections;
+            });
+            if (selectedSectionId === widgetId) {
+              setSelectedSectionId(null);
+              setSelectedWidgetInfo(null);
+            }
+            return;
+          }
+        }
+      }
+    } else {
+      const { parentSectionId, columnIndex, widgetIndex } = selectedWidgetInfo;
+      setSections(prevSections => {
+        return prevSections.map(section => {
+          if (section.id !== parentSectionId) return section;
+          if (!section.columnsContent || 
+              !section.columnsContent[columnIndex] || 
+              !Array.isArray(section.columnsContent[columnIndex].widgets) ||
+              !section.columnsContent[columnIndex].widgets[widgetIndex]) {
+            return section;
+          }
+          const newColumnsContent = [...section.columnsContent];
+          const newWidgets = [...newColumnsContent[columnIndex].widgets];
+          newWidgets.splice(widgetIndex, 1);
+          newColumnsContent[columnIndex] = { ...newColumnsContent[columnIndex], widgets: newWidgets };
+          return { ...section, columnsContent: newColumnsContent };
+        });
+      });
+      setSelectedSectionId(null);
+      setSelectedWidgetInfo(null);
+    }
+  }, [sections, selectedSectionId, selectedWidgetInfo]);
+
   // פונקציה ליצירת סקשן ריק לפי סוג
   const createEmptySection = (sectionType) => {
     const id = `section-${Date.now()}`;
-    
-    // תבניות ברירת מחדל לפי סוג הסקשן
     const defaultTypeSections = {
       hero: {
         id,
@@ -129,6 +268,56 @@ const [storeData, setStoreData] = useState({
         backgroundImage: null,
         backgroundColor: '#f7f7f7',
       },
+      row: {
+        id,
+        type: 'row',
+        columns: 2,
+        columnsContent: [
+          { widgets: [] },
+          { widgets: [] }
+        ],
+        columnGap: 20,
+        columnWidths: [50, 50],
+        columnsResponsive: true,
+        columnBackgroundColor: 'rgba(248, 249, 251, 0.7)'
+      },
+      button: {
+        id,
+        type: 'button',
+        title: '',
+        buttonText: 'לחץ כאן',
+        buttonLink: '#',
+        alignment: 'center',
+        buttonSize: 'medium',
+        buttonStyle: 'filled',
+        buttonColor: '#5271ff',
+        buttonTextColor: '#ffffff'
+      },
+      image: {
+        id,
+        type: 'image',
+        title: '',
+        image: '/builder/build/images/placeholders/image-placeholder.jpg',
+        altText: 'תמונה',
+        alignment: 'center'
+      },
+      text: {
+        id,
+        type: 'text',
+        title: 'כותרת',
+        content: 'הזן כאן את הטקסט שלך',
+        alignment: 'right',
+        contentColor: '#444444'
+      },
+      video: {
+        id,
+        type: 'video',
+        title: '',
+        videoUrl: '',
+        videoType: 'youtube',
+        aspectRatio: '16:9',
+        alignment: 'center'
+      },
     };
 
     return defaultTypeSections[sectionType] || defaultTypeSections['text-image'];
@@ -137,23 +326,12 @@ const [storeData, setStoreData] = useState({
   // פונקציה להוספת סקשן חדש
   const addSection = useCallback((sectionType, position = sections.length) => {
     console.log(`Adding section of type ${sectionType} at position ${position}`);
-    
-    // יצירת סקשן חדש עם מזהה ייחודי
     const newSection = createEmptySection(sectionType);
-    
-    // העתקת מערך הסקשנים הקיים והוספת הסקשן החדש במיקום הספציפי
     const newSections = [...sections];
     newSections.splice(position, 0, newSection);
-    
-    // עדכון מצב הסקשנים
     setSections(newSections);
-    
-    // בחירת הסקשן החדש
     setSelectedSectionId(newSection.id);
-    
-    // מציג הודעה זמנית של הוספת רכיב
     showToast(`נוסף רכיב ${getSectionName(sectionType)}`, 'success');
-    
     return newSection.id;
   }, [sections, showToast]);
 
@@ -169,8 +347,6 @@ const [storeData, setStoreData] = useState({
   // פונקציה למחיקת סקשן
   const deleteSection = useCallback((sectionId) => {
     setSections(prevSections => prevSections.filter(section => section.id !== sectionId));
-    
-    // אם הסקשן שנמחק הוא הסקשן הנבחר, אפס את הבחירה
     if (selectedSectionId === sectionId) {
       setSelectedSectionId(null);
     }
@@ -179,40 +355,25 @@ const [storeData, setStoreData] = useState({
   // פונקציה לשינוי סדר הסקשנים
   const reorderSections = useCallback((sourceIndex, destinationIndex) => {
     console.log(`Reordering section from index ${sourceIndex} to index ${destinationIndex}`);
-    
-    // וידוא שהאינדקסים תקינים
     if (sourceIndex < 0 || destinationIndex < 0 || 
         sourceIndex >= sections.length || destinationIndex >= sections.length) {
       console.warn('Invalid indices for reordering:', sourceIndex, destinationIndex);
       return;
     }
-    
-    // אם המקור והיעד זהים, אין צורך לעשות כלום
     if (sourceIndex === destinationIndex) {
       console.log('Source and destination indices are the same, no reordering needed');
       return;
     }
-    
-    // העתקת המערך הנוכחי
     const result = Array.from(sections);
-    
-    // הסרת האלמנט מהמקור והוספתו ליעד
     const [removed] = result.splice(sourceIndex, 1);
     result.splice(destinationIndex, 0, removed);
-    
-    // עדכון הסקשנים
     setSections(result);
-    
-    // לוג לבדיקה
     console.log('Sections reordered successfully');
-    
-    // בחירת הסקשן שהועבר
     setSelectedSectionId(removed.id);
   }, [sections, setSelectedSectionId]);
 
   // פונקציה לניקוי כל אלמנטי הגרירה מה-DOM
   const cleanupDragElements = useCallback(() => {
-    // הסרת אלמנט הגרירה הראשי
     if (dragImageElement) {
       try {
         if (dragImageElement.parentNode) {
@@ -223,8 +384,6 @@ const [storeData, setStoreData] = useState({
       }
       setDragImageElement(null);
     }
-    
-    // הסרת כל אלמנט גרירה נוסף
     try {
       document.querySelectorAll('.drag-ghost, .section-drag-ghost, .drag-image').forEach(element => {
         if (element && element.parentNode) {
@@ -249,14 +408,8 @@ const [storeData, setStoreData] = useState({
     setIsDragging(false);
     setDraggedItem(null);
     setDropIndicatorIndex(null);
-    
-    // ניקוי אלמנטי גרירה
     cleanupDragElements();
-    
-    // הסרת האזנה לאירועי גרירה
     document.removeEventListener('dragover', updateDragImagePosition);
-    
-    // איפוס מידע הגרירה
     dragInfo.current = {
       startX: 0,
       startY: 0,
@@ -264,26 +417,19 @@ const [storeData, setStoreData] = useState({
       currentIndex: null,
       isDraggingSection: false
     };
-    
-    // ניקוי נתוני גרירה מקומיים
     window.localStorage.removeItem('dragData');
   }, [cleanupDragElements, updateDragImagePosition]);
 
   // פונקציה לטיפול בגרירת רכיב חדש מהסיידבר
   const handleSidebarDragStart = useCallback((item) => {
     console.log('התחלת גרירת רכיב חדש:', item);
-    
     setDraggedItem(item);
     setIsDragging(true);
-    
-    // שמירת המידע גם בלוקל סטורג'
     window.localStorage.setItem('dragData', JSON.stringify({
       type: item.type,
       name: item.name,
       isNew: true
     }));
-    
-    // יצירת אלמנט ויזואלי לגרירה
     const dragImage = document.createElement('div');
     dragImage.className = 'drag-ghost';
     dragImage.innerHTML = `
@@ -297,48 +443,36 @@ const [storeData, setStoreData] = useState({
     dragImage.style.transform = 'translate(-50%, -50%)';
     dragImage.style.pointerEvents = 'none';
     dragImage.style.zIndex = '9999';
-    
     document.body.appendChild(dragImage);
     setDragImageElement(dragImage);
-    
-    // עדכון מיקום האלמנט בעת הגרירה
     document.addEventListener('dragover', updateDragImagePosition);
-    
     return dragImage;
   }, [updateDragImagePosition]);
 
   // פונקציה לטיפול בשחרור רכיב מהסיידבר
   const handleSidebarDrop = useCallback((dropIndex) => {
     console.log('שחרור רכיב במיקום:', dropIndex);
-    
-    // בדיקה אם יש נתוני גרירה בלוקל סטורג'
     const dragDataStr = window.localStorage.getItem('dragData');
     if (dragDataStr) {
       try {
         const dragData = JSON.parse(dragDataStr);
-        
         if (dragData.isNew) {
-          // זה רכיב חדש מהסיידבר
           console.log('מוסיף רכיב חדש מסוג', dragData.type, 'במיקום', dropIndex);
           addSection(dragData.type, dropIndex);
+          showToast && showToast(`נוסף רכיב חדש מסוג ${dragData.name || dragData.type}`, "success");
         }
       } catch (error) {
         console.error('שגיאה בעיבוד נתוני גרירה מלוקל סטורג\':', error);
       }
     } else if (draggedItem) {
-      // גיבוי במקרה שהלוקל סטורג' לא עבד
       addSection(draggedItem.type, dropIndex);
     }
-    
-    // ניקוי מצב הגרירה
     handleDragEnd();
   }, [draggedItem, addSection, handleDragEnd]);
 
   // פונקציה לטיפול בהתחלת גרירת סקשן קיים
   const handleSectionDragStart = useCallback((e, sectionId, index) => {
     console.log('התחלת גרירת סקשן קיים:', sectionId, 'ממיקום', index);
-    
-    // שמירת מידע ההתחלתי של הגרירה
     dragInfo.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -346,18 +480,13 @@ const [storeData, setStoreData] = useState({
       currentIndex: index,
       isDraggingSection: true
     };
-    
-    // שמירת מידע הגרירה גם בלוקל סטורג'
     window.localStorage.setItem('dragData', JSON.stringify({
       id: sectionId,
       index: index,
       type: 'SECTION',
       isNew: false
     }));
-    
     setIsDragging(true);
-    
-    // יצירת אלמנט ויזואלי לגרירה
     const section = sections[index];
     const dragImage = document.createElement('div');
     dragImage.className = 'section-drag-ghost';
@@ -372,30 +501,21 @@ const [storeData, setStoreData] = useState({
     dragImage.style.transform = 'translate(-50%, -50%)';
     dragImage.style.pointerEvents = 'none';
     dragImage.style.zIndex = '9999';
-    
     document.body.appendChild(dragImage);
     setDragImageElement(dragImage);
-    
-    // מציין את הסקשן הנגרר
     setSelectedSectionId(sectionId);
-    
-    // עדכון מיקום האלמנט בעת הגרירה
     document.addEventListener('dragover', updateDragImagePosition);
   }, [sections, updateDragImagePosition]);
 
   // פונקציה לטיפול בשחרור סקשן לאחר גרירה
   const handleSectionDrop = useCallback((dropIndex) => {
     console.log('שחרור סקשן במיקום:', dropIndex);
-    
-    // בדיקה אם יש נתוני גרירה בלוקל סטורג'
     const dragDataStr = window.localStorage.getItem('dragData');
     if (dragDataStr) {
       try {
         const dragData = JSON.parse(dragDataStr);
-        
         if (dragData.type === 'SECTION' && !dragData.isNew) {
           const sourceIndex = dragData.index;
-          
           if (sourceIndex !== dropIndex && sourceIndex !== undefined) {
             console.log('מסדר מחדש מ-', sourceIndex, 'ל-', dropIndex);
             reorderSections(sourceIndex, dropIndex);
@@ -405,77 +525,56 @@ const [storeData, setStoreData] = useState({
         console.error('שגיאה בעיבוד נתוני גרירה מלוקל סטורג\':', error);
       }
     } else if (dragInfo.current.isDraggingSection && dragInfo.current.initialIndex !== dropIndex) {
-      // גיבוי במקרה שהלוקל סטורג' לא עבד
       reorderSections(dragInfo.current.initialIndex, dropIndex);
     }
-    
-    // ניקוי מצב הגרירה
     handleDragEnd();
   }, [reorderSections, handleDragEnd]);
 
   // פונקציה לסימון מיקום השחרור הפוטנציאלי בעת גרירה
   const updateDropIndicator = useCallback((clientY) => {
-    // מציאת כל אזורי השחרור
     const dropZones = document.querySelectorAll('.drop-zone');
-    
     if (dropZones.length > 0) {
-      // בדיקה איזה אזור הוא הקרוב ביותר למיקום הנוכחי
       let closestZoneIndex = null;
       let minDistance = Infinity;
-      
       dropZones.forEach((zone, index) => {
         const rect = zone.getBoundingClientRect();
         const centerY = rect.top + rect.height / 2;
         const distance = Math.abs(clientY - centerY);
-        
         if (distance < minDistance) {
           minDistance = distance;
           closestZoneIndex = index;
         }
       });
-      
-      // עדכון אינדקס אזור השחרור
       setDropIndicatorIndex(closestZoneIndex);
     }
   }, []);
 
-  // הוספת מאזין גלובלי לסיום גרירה
   useEffect(() => {
     const handleGlobalDragEnd = () => {
       console.log('אירוע dragend גלובלי - ניקוי מצב גרירה');
-      handleDragEnd();
+      setIsDragging(false);
+      setActiveDropZoneIndex(null);
+      localStorage.removeItem('dragData');
     };
-    
     document.addEventListener('dragend', handleGlobalDragEnd);
-    
     return () => {
       document.removeEventListener('dragend', handleGlobalDragEnd);
     };
-  }, [handleDragEnd]);
+  }, [setIsDragging]);
 
-  // פונקציית Undo
   const undo = useCallback(() => {
-    // יש להשלים את הלוגיקה
     console.log('undo operation');
   }, []);
   
-  // פונקציית Redo
   const redo = useCallback(() => {
-    // יש להשלים את הלוגיקה
     console.log('redo operation');
   }, []);
 
-  // שמירת המבנה הנוכחי
   const saveLayout = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      // השתמש בשירות API החדש
       const result = await builderService.saveData(window.SERVER_DATA.storeId, sections);
-      
-      // הצגת הודעת הצלחה
       showToast('נשמר בהצלחה');
-      
       return result;
     } catch (error) {
       console.error('Save error:', error);
@@ -486,19 +585,13 @@ const [storeData, setStoreData] = useState({
     }
   }, [sections, showToast]);
   
-  // עדכון פונקציית הפרסום (חדשה)
   const publishLayout = useCallback(async () => {
     try {
       setIsLoading(true);
-      
       if (!storeData.storeId) {
         throw new Error('מזהה חנות לא נמצא');
       }
-      
-      // קריאה לפונקציית פרסום בשירות
-      // שימוש ב-builderService.publishData באופן ישיר
       const result = await builderService.publishData(storeData.storeId, sections);
-      
       showToast('פורסם בהצלחה', 'success');
       return result;
     } catch (error) {
@@ -510,9 +603,6 @@ const [storeData, setStoreData] = useState({
     }
   }, [sections, storeData, showToast]);
   
-  
-
-  // פונקציה עזר - קבלת שם מותאם של הסקשן
   function getSectionName(type) {
     const sectionNames = {
       'hero': 'כותרת ראשית',
@@ -521,33 +611,30 @@ const [storeData, setStoreData] = useState({
       'products': 'מוצרים',
       'testimonials': 'המלצות',
       'collections': 'קטגוריות',
-      'newsletter': 'ניוזלטר'
+      'newsletter': 'ניוזלטר',
+      'row': 'שורת עמודות',
+      'button': 'כפתור',
+      'image': 'תמונה',
+      'text': 'טקסט',
+      'video': 'וידאו'
     };
-    
     return sectionNames[type] || type;
   }
-
 
   const loadLayout = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      // בדיקה שיש מזהה חנות
       if (!window.SERVER_DATA?.storeId) {
         console.error('No store ID provided');
         setIsLoading(false);
         return;
       }
-      
-      // השתמש בשירות API החדש
       const data = await builderService.loadData(window.SERVER_DATA.storeId);
-      
       if (data && Array.isArray(data)) {
         setSections(data);
       } else {
-        setSections([]); // מבנה ריק אם אין נתונים
+        setSections([]);
       }
-      
     } catch (error) {
       console.error('Load error:', error);
       showToast(`שגיאה בטעינה: ${error.message}`, 'error');
@@ -561,7 +648,6 @@ const [storeData, setStoreData] = useState({
       if (!window.SERVER_DATA?.storeId) {
         throw new Error('No store ID provided');
       }
-      
       const result = await builderService.uploadImage(window.SERVER_DATA.storeId, file);
       return result.url;
     } catch (error) {
@@ -571,13 +657,11 @@ const [storeData, setStoreData] = useState({
     }
   }, [showToast]);
   
-  // מחיקת תמונה
   const deleteImage = useCallback(async (imageUrl) => {
     try {
       if (!window.SERVER_DATA?.storeId) {
         throw new Error('No store ID provided');
       }
-      
       await builderService.deleteImage(window.SERVER_DATA.storeId, imageUrl);
       return true;
     } catch (error) {
@@ -587,7 +671,6 @@ const [storeData, setStoreData] = useState({
     }
   }, [showToast]);
   
-  // ערכים שיהיו זמינים לקומפוננטות
   const value = {
     sections,
     selectedSection,
@@ -597,6 +680,7 @@ const [storeData, setStoreData] = useState({
     isLoading,
     draggedItem,
     dropIndicatorIndex,
+    selectedWidgetInfo,
     setSections,
     setSelectedSectionId,
     setIsDragging,
@@ -618,7 +702,10 @@ const [storeData, setStoreData] = useState({
     updateDropIndicator,
     showToast,
     getSectionName,
-    cleanupDragElements
+    cleanupDragElements,
+    findSelectedWidget,
+    updateWidgetInColumn,
+    deleteWidgetFromColumn
   };
 
   return (

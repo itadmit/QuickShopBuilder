@@ -6325,3 +6325,59 @@ body.dragging .drop-zone-empty {
 .property-group img {
   max-width: 45px;
 }
+
+/* סגנונות להוסיף לקובץ ה-CSS שלך */
+.column-widget {
+  position: relative;
+  margin-bottom: 15px;
+  cursor: pointer;
+  border: 1px solid #eaeaea;
+  border-radius: 4px;
+  transition: box-shadow 0.2s ease;
+}
+
+.column-widget:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.widget-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 5px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.column-widget:hover .widget-controls {
+  opacity: 1;
+}
+
+.widget-settings-button,
+.widget-remove-button {
+  background: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.widget-settings-button:hover {
+  background: #f0f0f0;
+}
+
+.widget-remove-button:hover {
+  background: #ff5252;
+  color: white;
+}
+
+.widget-content {
+  padding: 10px;
+}

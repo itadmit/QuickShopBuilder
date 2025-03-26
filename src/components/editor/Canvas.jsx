@@ -12,6 +12,14 @@ import ProductsSection from '../sections/ProductsSection';
 import CollectionListSection from '../sections/CollectionListSection';
 import NewsletterSection from '../sections/NewsletterSection';
 
+
+// ייבוא הרכיבים החדשים
+import RowSection from '../sections/RowSection';
+import ButtonSection from '../sections/ButtonSection';
+import ImageSection from '../sections/ImageSection';
+import TextSection from '../sections/TextSection';
+import VideoSection from '../sections/VideoSection';
+
 const Canvas = () => {
   const { 
     sections, 
@@ -45,26 +53,37 @@ const Canvas = () => {
   }, [setIsDragging]);
 
   // פונקציה לרנדור סקשן לפי סוג
-  const renderSection = (section) => {
-    switch (section.type) {
-      case 'hero':
-        return <HeroSection data={section} />;
-      case 'banner':
-        return <BannerSection data={section} />;
-      case 'text-image':
-        return <TextWithImageSection data={section} />;
-      case 'testimonials':
-        return <TestimonialsSection data={section} />;
-      case 'products':
-        return <ProductsSection data={section} />;
-      case 'collections':
-        return <CollectionListSection data={section} />;
-      case 'newsletter':
-        return <NewsletterSection data={section} />;
-      default:
-        return <div>סוג סקשן לא מוכר: {section.type}</div>;
-    }
-  };
+  // בפונקציה renderSection נוסיף את הרכיב החדש:
+const renderSection = (section) => {
+  switch (section.type) {
+    case 'hero':
+      return <HeroSection data={section} />;
+    case 'banner':
+      return <BannerSection data={section} />;
+    case 'text-image':
+      return <TextWithImageSection data={section} />;
+    case 'testimonials':
+      return <TestimonialsSection data={section} />;
+    case 'products':
+      return <ProductsSection data={section} />;
+    case 'collections':
+      return <CollectionListSection data={section} />;
+    case 'newsletter':
+      return <NewsletterSection data={section} />;
+    case 'row':
+      return <RowSection data={section} />;  // הוספנו את רכיב השורה
+    case 'button':
+      return <ButtonSection data={section} />;  // הוספנו את הרכיב הזה
+    case 'image':
+      return <ImageSection data={section} />;   // הוספנו את הרכיב הזה
+    case 'text':
+      return <TextSection data={section} />;    // הוספנו את הרכיב הזה
+    case 'video':
+      return <VideoSection data={section} />;   // הוספנו את הרכיב הזה
+    default:
+      return <div>סוג סקשן לא מוכר: {section.type}</div>;
+  }
+};
 
   // פונקציה להזזת סקשן למעלה
   const moveSectionUp = (index) => {
