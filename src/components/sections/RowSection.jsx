@@ -36,9 +36,9 @@ const RowSection = ({ data }) => {
   const { 
     isDragging, 
     selectedSectionId, 
-    setSelectedSectionId,  // חשוב להוסיף את זה!
+    setSelectedSectionId,
     updateSection, 
-    showToast 
+    showToast
   } = useEditor();
   
   const [activeDropColumn, setActiveDropColumn] = useState(null);
@@ -244,6 +244,30 @@ const RowSection = ({ data }) => {
     return defaultWidgets[type] || { id: widgetId, type, name: name || type };
   };
 
+  // פונקציה לטיפול בבחירת ווידג'ט - מתוקנת
+  const handleWidgetSelect = (widget, columnIndex, widgetIndex) => {
+    console.log('Widget selected:', widget.id, 'Column:', columnIndex, 'Index:', widgetIndex);
+    
+    // במקום להשתמש ב-setSelectedWidgetInfo (שכנראה לא קיים)
+    // נעדכן את הווידג'ט ישירות עם המידע שצריך
+    const updatedWidget = {
+      ...widget,
+      _parentSectionId: id,
+      _columnIndex: columnIndex,
+      _widgetIndex: widgetIndex
+    };
+    
+    // עדכון העמודה עם המידע הנוסף
+    const newColumnsContent = [...columnsContent];
+    if (newColumnsContent[columnIndex] && newColumnsContent[columnIndex].widgets) {
+      newColumnsContent[columnIndex].widgets[widgetIndex] = updatedWidget;
+      updateSection(id, { columnsContent: newColumnsContent });
+    }
+    
+    // עדכון ה-selectedSectionId כדי לתמוך בבחירת הווידג'ט בפאנל ההגדרות
+    setSelectedSectionId(widget.id);
+  };
+
   // רינדור העמודות בשורה
   const renderColumns = () => {
     // ודא שיש לנו את המספר הנכון של עמודות
@@ -286,30 +310,10 @@ const RowSection = ({ data }) => {
                 {columnData.widgets.map((widget, widgetIndex) => (
                   <div 
                     key={`widget-${widgetIndex}`} 
-                    className="column-widget"
-                    onClick={() => {
-                      // בלחיצה על הווידג'ט בוחרים אותו לעריכה
-                      // נשמור את המזהה של הווידג'ט ואת העמודה שלו בקונטקסט
-                      // כדי שנוכל להשתמש בו בפאנל ההגדרות
-                      const widgetSectionId = `${id}-col${index}-widget${widgetIndex}`;
-                      
-                      // עדכון מידע נוסף לווידג'ט כדי שנוכל לשלוף אותו אחר כך
-                      const updatedWidget = {
-                        ...widget,
-                        _parentSectionId: id,
-                        _columnIndex: index,
-                        _widgetIndex: widgetIndex
-                      };
-                      
-                      // עדכון העמודה עם המידע הנוסף
-                      const newColumnsContent = [...columnsContent];
-                      if (newColumnsContent[index] && newColumnsContent[index].widgets) {
-                        newColumnsContent[index].widgets[widgetIndex] = updatedWidget;
-                        updateSection(id, { columnsContent: newColumnsContent });
-                      }
-                      
-                      // שינוי הסקשן הנבחר לווידג'ט
-                      setSelectedSectionId(widget.id);
+                    className={`column-widget ${selectedSectionId === widget.id ? 'selected' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWidgetSelect(widget, index, widgetIndex);
                     }}
                   >
                     <div className="widget-controls" style={{
@@ -324,8 +328,9 @@ const RowSection = ({ data }) => {
                         className="widget-settings-button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // פתיחת הגדרות הווידג'ט
-                          setSelectedSectionId(widget.id);
+                          // פתיחת הגדרות הווידג'ט - כאן התיקון העיקרי
+                          console.log('Settings button clicked for widget:', widget.id);
+                          handleWidgetSelect(widget, index, widgetIndex);
                         }}
                         style={{
                           background: '#fff',
@@ -388,7 +393,8 @@ const RowSection = ({ data }) => {
                       borderRadius: '4px',
                       position: 'relative',
                       cursor: 'pointer',
-                      transition: 'box-shadow 0.2s ease'
+                      transition: 'box-shadow 0.2s ease',
+                      boxShadow: selectedSectionId === widget.id ? '0 0 0 2px #5271ff' : 'none'
                     }}>
                       {renderWidget(widget)}
                     </div>

@@ -50,7 +50,7 @@ const Canvas = () => {
     return () => {
       document.removeEventListener('dragend', handleGlobalDragEnd);
     };
-  }, [setIsDragging]);
+  }, [setIsDragging, setActiveDropZoneIndex]); // Pass setActiveDropZoneIndex dependency
 
   // פונקציה לרנדור סקשן לפי סוג
   // בפונקציה renderSection נוסיף את הרכיב החדש:

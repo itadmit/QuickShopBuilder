@@ -1,4 +1,4 @@
-// EditorContext.jsx - תיקון בעיית reference לפונקציית showToast
+// EditorContext.jsx - תיקון בעיית reference לפונקציית showToast ו-setActiveDropZoneIndex
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import builderService from '../api/builderService';
 
@@ -109,6 +109,7 @@ export function EditorProvider({ children }) {
     return null;
   }, [selectedSectionId, sections, selectedWidgetInfo]);
 
+  //חלק 2
   // פונקציה לעדכון ווידג'ט בתוך עמודה
   const updateWidgetInColumn = useCallback((widgetId, data) => {
     if (!selectedWidgetInfo) {
@@ -468,7 +469,7 @@ export function EditorProvider({ children }) {
       addSection(draggedItem.type, dropIndex);
     }
     handleDragEnd();
-  }, [draggedItem, addSection, handleDragEnd]);
+  }, [draggedItem, addSection, handleDragEnd, showToast]);
 
   // פונקציה לטיפול בהתחלת גרירת סקשן קיים
   const handleSectionDragStart = useCallback((e, sectionId, index) => {
@@ -549,11 +550,12 @@ export function EditorProvider({ children }) {
     }
   }, []);
 
+  // תיקון בחלק זה - השתנה מ-setActiveDropZoneIndex ל-setDropIndicatorIndex
   useEffect(() => {
     const handleGlobalDragEnd = () => {
       console.log('אירוע dragend גלובלי - ניקוי מצב גרירה');
       setIsDragging(false);
-      setActiveDropZoneIndex(null);
+      setDropIndicatorIndex(null); // פה היה השינוי העיקרי
       localStorage.removeItem('dragData');
     };
     document.addEventListener('dragend', handleGlobalDragEnd);
@@ -695,6 +697,7 @@ export function EditorProvider({ children }) {
     loadLayout,
     undo,
     redo,
+    handleSidebarDragStart,
     handleSidebarDragStart,
     handleSidebarDrop,
     handleSectionDragStart,

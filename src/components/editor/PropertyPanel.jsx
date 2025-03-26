@@ -22,14 +22,15 @@ import {
 const PropertyPanel = () => {
   // משתמשים בפונקציות החדשות
   const { 
-    selectedSection, 
-    updateSection, 
-    deleteSection, 
-    findSelectedWidget, 
-    updateWidgetInColumn, 
-    deleteWidgetFromColumn,
-    selectedWidgetInfo
-  } = useEditor();
+  selectedSection, 
+  updateSection, 
+  deleteSection, 
+  findSelectedWidget, 
+  updateWidgetInColumn, 
+  deleteWidgetFromColumn,
+  selectedWidgetInfo,
+  selectedSectionId
+} = useEditor();
 
   const [activeTab, setActiveTab] = useState('content'); // 'content', 'style', 'settings'
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
@@ -38,27 +39,33 @@ const PropertyPanel = () => {
   const [loadingCategoryDetails, setLoadingCategoryDetails] = useState(false);
 
   // בדיקה אם מדובר בווידג'ט בתוך עמודה
-  const selectedWidget = findSelectedWidget();
-
+  const selectedWidget = findSelectedWidget(); 
+  console.log('PropertyPanel - selectedSectionId:', selectedSectionId);
+  console.log('PropertyPanel - selectedWidget:', selectedWidget);
+  console.log('PropertyPanel - selectedWidgetInfo:', selectedWidgetInfo);
   // פונקציה מעודכנת לטיפול בשינויים עבור ווידג'טים ועמודות
   const handleChange = (field, value) => {
     if (selectedWidget) {
       // אם זה ווידג'ט בתוך עמודה
+      console.log(`Updating widget ${selectedWidget.id}, field: ${field}, value:`, value);
       updateWidgetInColumn(selectedWidget.id, { [field]: value });
-    } else {
+    } else if (selectedSection) {
       // אם זה סקשן רגיל
+      console.log(`Updating section ${selectedSection.id}, field: ${field}, value:`, value);
       updateSection(selectedSection.id, { [field]: value });
     }
   };
 
+
   // פונקציה מעודכנת למחיקה עבור ווידג'טים ועמודות
+  // פונקציה מעודכנת למחיקה
   const handleDelete = () => {
     if (selectedWidget) {
       // מחיקת ווידג'ט מעמודה
       if (window.confirm('האם אתה בטוח שברצונך למחוק את הווידג\'ט הזה?')) {
         deleteWidgetFromColumn(selectedWidget.id);
       }
-    } else {
+    } else if (selectedSection) {
       // מחיקת סקשן
       if (window.confirm('האם אתה בטוח שברצונך למחוק את הסקשן הזה?')) {
         deleteSection(selectedSection.id);
@@ -66,7 +73,7 @@ const PropertyPanel = () => {
     }
   };
 
-  // If no section or widget is selected, show empty state
+  // הצגת מצב ריק אם אין סקשן או ווידג'ט נבחר
   if (!selectedSection && !selectedWidget) {
     return (
       <div className="property-panel empty">
@@ -74,9 +81,6 @@ const PropertyPanel = () => {
           <h3>הגדרות</h3>
         </div>
         <div className="empty-message">
-          <div className="empty-icon">
-            <FiSettings size={40} opacity={0.3} />
-          </div>
           <p>בחר אלמנט כדי לערוך את המאפיינים שלו</p>
         </div>
       </div>
@@ -87,10 +91,12 @@ const PropertyPanel = () => {
   const getItemTitle = () => {
     if (selectedWidget) {
       return `ווידג'ט ${getSectionName(selectedWidget.type)}`;
-    } else {
+    } else if (selectedSection) {
       return getSectionName(selectedSection.type);
     }
+    return "הגדרות";
   };
+
 
   // פונקציות עזר למידע על מחירי מוצרים ועיבוד וריאציות (נשארו ללא שינוי)
   const getFullProductImageUrl = (imageUrl) => {
