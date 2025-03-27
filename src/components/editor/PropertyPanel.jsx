@@ -277,56 +277,176 @@ const PropertyPanel = () => {
   // הפונקציה המקורית לסקשנים (לא שונו)
   const renderContentTab = () => {
     switch (selectedSection.type) {
-      case 'hero':
-        return (
+// בתוך פונקציית renderContentTab בפאנל ההגדרות עבור סקשן "hero"
+case 'hero':
+  return (
+    <>
+      <div className="property-group">
+        <label className="property-label">גובה הסקשן (פיקסלים)</label>
+        <RangeSlider
+          min={200}
+          max={800}
+          value={selectedSection.height || 400}
+          onChange={(value) => handleChange('height', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">כותרת ראשית</label>
+        <input
+          type="text"
+          className="text-input"
+          value={selectedSection.title || ''}
+          onChange={(e) => handleChange('title', e.target.value)}
+          placeholder="הזן כותרת ראשית"
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">כותרת משנה</label>
+        <textarea
+          className="textarea-input"
+          value={selectedSection.subtitle || ''}
+          onChange={(e) => handleChange('subtitle', e.target.value)}
+          placeholder="הזן תיאור קצר"
+          rows={3}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">טקסט כפתור</label>
+        <input
+          type="text"
+          className="text-input"
+          value={selectedSection.buttonText || ''}
+          onChange={(e) => handleChange('buttonText', e.target.value)}
+          placeholder="לדוגמה: קרא עוד"
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">קישור כפתור</label>
+        <input
+          type="text"
+          className="text-input"
+          value={selectedSection.buttonLink || ''}
+          onChange={(e) => handleChange('buttonLink', e.target.value)}
+          placeholder="הזן URL"
+        />
+      </div>
+    </>
+  );
+  case 'row':
+    return (
+      <>
+        {/* בחירת רוחב כללי */}
+        <div className="property-group">
+          <label className="property-label">רוחב השורה</label>
+          <SelectControl
+            options={[
+              { value: 'full', label: 'רוחב מלא' },
+              { value: 'container', label: 'קונטיינר' },
+              { value: 'custom', label: 'מותאם (פיקסלים)' }
+            ]}
+            value={selectedSection.rowWidthType || 'full'}
+            onChange={(value) => handleChange('rowWidthType', value)}
+          />
+        </div>
+  
+        {/* אם נבחר 'custom', נציג סליידר או אינפוט לרוחב בפיקסלים */}
+        {selectedSection.rowWidthType === 'custom' && (
+          <div className="property-group">
+            <label className="property-label">רוחב מותאם (פיקסלים)</label>
+            <RangeSlider
+              min={200}
+              max={2000}
+              value={selectedSection.rowCustomWidth || 1200}
+              onChange={(val) => handleChange('rowCustomWidth', val)}
+            />
+          </div>
+        )}
+  
+        {/* בחירת מספר עמודות */}
+        <div className="property-group">
+          <label className="property-label">מספר עמודות</label>
+          <SelectControl
+            options={[
+              { value: 1, label: 'עמודה אחת' },
+              { value: 2, label: 'שתי עמודות' },
+              { value: 3, label: 'שלוש עמודות' },
+              { value: 4, label: 'ארבע עמודות' },
+              { value: 5, label: 'חמש עמודות' },
+              { value: 6, label: 'שש עמודות' }
+            ]}
+            value={selectedSection.columns || 2}
+            onChange={(value) => {
+              const numColumns = parseInt(value);
+              const equalWidth = 100 / numColumns;
+              const newColumnWidths = Array(numColumns).fill(equalWidth);
+              let newColumnsContent = [...(selectedSection.columnsContent || [])];
+  
+              while (newColumnsContent.length < numColumns) {
+                newColumnsContent.push({ widgets: [] });
+              }
+              if (newColumnsContent.length > numColumns) {
+                const columnsToRemove = newColumnsContent.slice(numColumns);
+                const hasContent = columnsToRemove.some(col => col.widgets && col.widgets.length > 0);
+                if (hasContent && !window.confirm('ישנו תוכן בעמודות שיימחקו. להמשיך?')) {
+                  return;
+                }
+                newColumnsContent = newColumnsContent.slice(0, numColumns);
+              }
+  
+              handleChange('columns', numColumns);
+              handleChange('columnWidths', newColumnWidths);
+              handleChange('columnsContent', newColumnsContent);
+            }}
+          />
+        </div>
+  
+        <div className="property-group">
+          <label className="property-label">מרווח בין עמודות</label>
+          <RangeSlider
+            min={0}
+            max={50}
+            value={selectedSection.columnGap || 20}
+            onChange={(value) => handleChange('columnGap', value)}
+          />
+        </div>
+
+        <div className="property-group">
+        <label className="property-label">עובי מסגרת עמודות</label>
+        <RangeSlider
+          min={0}
+          max={10}
+          value={selectedSection.columnBorderWidth || 0}
+          onChange={(val) => handleChange('columnBorderWidth', val)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">צבע מסגרת עמודות</label>
+        <ColorPicker
+          value={selectedSection.columnBorderColor || '#cccccc'}
+          onChange={(val) => handleChange('columnBorderColor', val)}
+        />
+      </div>
+        <div className="property-group">
+          <label className="property-label">רקע עמודות</label>
+          <ColorPicker
+            value={selectedSection.columnBackgroundColor || 'rgba(248, 249, 251, 0.7)'}
+            onChange={(value) => handleChange('columnBackgroundColor', value)}
+          />
+        </div>
+        <div className="property-group">
+          <label className="property-label">התנהגות רספונסיבית</label>
+          <SwitchControl
+            checked={selectedSection.columnsResponsive !== false}
+            onChange={(checked) => handleChange('columnsResponsive', checked)}
+          />
+          <p className="helper-text">מאפשר התאמה אוטומטית למסכים צרים</p>
+        </div>
+  
+        {/* אם רספונסיבי, בוחרים עמודות לטאבלט/מובייל */}
+        {selectedSection.columnsResponsive !== false && (
           <>
             <div className="property-group">
-              <label className="property-label">כותרת ראשית</label>
-              <input
-                type="text"
-                className="text-input"
-                value={selectedSection.title || ''}
-                onChange={(e) => handleChange('title', e.target.value)}
-                placeholder="הזן כותרת ראשית"
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">כותרת משנה</label>
-              <textarea
-                className="textarea-input"
-                value={selectedSection.subtitle || ''}
-                onChange={(e) => handleChange('subtitle', e.target.value)}
-                placeholder="הזן תיאור קצר"
-                rows={3}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">טקסט כפתור</label>
-              <input
-                type="text"
-                className="text-input"
-                value={selectedSection.buttonText || ''}
-                onChange={(e) => handleChange('buttonText', e.target.value)}
-                placeholder="לדוגמה: קרא עוד"
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">קישור כפתור</label>
-              <input
-                type="text"
-                className="text-input"
-                value={selectedSection.buttonLink || ''}
-                onChange={(e) => handleChange('buttonLink', e.target.value)}
-                placeholder="הזן URL"
-              />
-            </div>
-          </>
-        );
-      case 'row':
-        return (
-          <>
-            <div className="property-group">
-              <label className="property-label">מספר עמודות</label>
+              <label className="property-label">מספר עמודות בטאבלט</label>
               <SelectControl
                 options={[
                   { value: 1, label: 'עמודה אחת' },
@@ -334,75 +454,206 @@ const PropertyPanel = () => {
                   { value: 3, label: 'שלוש עמודות' },
                   { value: 4, label: 'ארבע עמודות' }
                 ]}
-                value={selectedSection.columns || 2}
-                onChange={(value) => {
-                  const numColumns = parseInt(value);
-                  const equalWidth = 100 / numColumns;
-                  const newColumnWidths = Array(numColumns).fill(equalWidth);
-                  let newColumnsContent = [...(selectedSection.columnsContent || [])];
-                  while (newColumnsContent.length < numColumns) {
-                    newColumnsContent.push({ widgets: [] });
-                  }
-                  if (newColumnsContent.length > numColumns) {
-                    newColumnsContent = newColumnsContent.slice(0, numColumns);
-                  }
-                  handleChange('columns', numColumns);
-                  handleChange('columnWidths', newColumnWidths);
-                  handleChange('columnsContent', newColumnsContent);
-                }}
+                value={selectedSection.tabletColumns || Math.min(2, selectedSection.columns || 2)}
+                onChange={(value) => handleChange('tabletColumns', parseInt(value))}
               />
+              <p className="helper-text">מסכים בגודל בינוני (768px-992px)</p>
             </div>
+            
             <div className="property-group">
-              <label className="property-label">מרווח בין עמודות</label>
-              <RangeSlider
-                min={0}
-                max={50}
-                value={selectedSection.columnGap || 20}
-                onChange={(value) => handleChange('columnGap', value)}
+              <label className="property-label">מספר עמודות במובייל</label>
+              <SelectControl
+                options={[
+                  { value: 1, label: 'עמודה אחת' },
+                  { value: 2, label: 'שתי עמודות' }
+                ]}
+                value={selectedSection.mobileColumns || 1}
+                onChange={(value) => handleChange('mobileColumns', parseInt(value))}
               />
+              <p className="helper-text">מסכים קטנים (פחות מ-768px)</p>
             </div>
-            <div className="property-group">
-              <label className="property-label">רקע עמודות</label>
-              <ColorPicker
-                value={selectedSection.columnBackgroundColor || 'rgba(248, 249, 251, 0.7)'}
-                onChange={(value) => handleChange('columnBackgroundColor', value)}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">התנהגות רספונסיבית</label>
-              <SwitchControl
-                checked={selectedSection.columnsResponsive !== false}
-                onChange={(checked) => handleChange('columnsResponsive', checked)}
-              />
-              <p className="helper-text">כאשר מופעל, העמודות יסתדרו אנכית במסכים צרים</p>
-            </div>
-            {selectedSection.columns > 1 && (
-              <div className="property-group">
-                <label className="property-label">רוחב עמודות</label>
-                <div className="column-widths-controls">
-                  {selectedSection.columnWidths && selectedSection.columnWidths.map((width, idx) => (
-                    <div key={idx} className="column-width-control">
-                      <label>עמודה {idx + 1}</label>
-                      <RangeSlider
-                        min={10}
-                        max={90}
-                        value={width}
-                        onChange={(value) => {
-                          const newWidths = [...selectedSection.columnWidths];
-                          newWidths[idx] = value;
-                          const totalWidth = newWidths.reduce((sum, w) => sum + w, 0);
-                          const adjustment = 100 / totalWidth;
-                          const adjustedWidths = newWidths.map(w => Math.round(w * adjustment));
-                          handleChange('columnWidths', adjustedWidths);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
-        );
+        )}
+  
+        {/* אם יש יותר מעמודה אחת, אפשר לשלוט ברוחב כל עמודה */}
+        {selectedSection.columns > 1 && (
+          <div className="property-group">
+            <label className="property-label">רוחב עמודות</label>
+            <div className="column-widths-controls">
+              {selectedSection.columnWidths && selectedSection.columnWidths.map((width, idx) => (
+                <div key={idx} className="column-width-control">
+                  <label>עמודה {idx + 1}</label>
+                  <RangeSlider
+                    min={10}
+                    max={90}
+                    value={width}
+                    onChange={(value) => {
+                      const newWidths = [...selectedSection.columnWidths];
+                      newWidths[idx] = value;
+                      const totalWidth = newWidths.reduce((sum, w) => sum + w, 0);
+                      const adjustment = 100 / totalWidth;
+                      const adjustedWidths = newWidths.map(w => Math.round(w * adjustment));
+                      handleChange('columnWidths', adjustedWidths);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  
+    case 'cta':
+  return (
+    <>
+      <div className="property-group">
+        <label className="property-label">תמונת רקע</label>
+        <ImagePicker
+          value={selectedSection.image || ''}
+          onChange={(value) => handleChange('image', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">טקסט</label>
+        <textarea
+          className="textarea-input"
+          value={selectedSection.text || ''}
+          onChange={(e) => handleChange('text', e.target.value)}
+          placeholder="הזן טקסט להנעה לפעולה"
+          rows={4}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">טקסט כפתור</label>
+        <input
+          type="text"
+          className="text-input"
+          value={selectedSection.buttonText || ''}
+          onChange={(e) => handleChange('buttonText', e.target.value)}
+          placeholder="לדוגמה: קנה עכשיו"
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">קישור כפתור</label>
+        <input
+          type="text"
+          className="text-input"
+          value={selectedSection.buttonLink || ''}
+          onChange={(e) => handleChange('buttonLink', e.target.value)}
+          placeholder="הזן URL"
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">סוג האוברליי</label>
+        <SelectControl
+          options={[
+            { value: 'full', label: 'חשיכה מלאה' },
+            { value: 'bottom', label: 'חשיכה בתחתית' },
+            { value: 'none', label: 'ללא חשיכה' }
+          ]}
+          value={selectedSection.overlayType || 'full'}
+          onChange={(value) => handleChange('overlayType', value)}
+        />
+      </div>
+      {selectedSection.overlayType !== 'none' && (
+        <div className="property-group">
+          <label className="property-label">עוצמת החשיכה</label>
+          <RangeSlider
+            min={0}
+            max={1}
+            step={0.05}
+            value={selectedSection.overlayOpacity || 0.5}
+            onChange={(val) => handleChange('overlayOpacity', val)}
+          />
+        </div>
+      )}
+      {/* טיפוגרפיה לטקסט */}
+      <TypographyControl
+        values={{
+          fontFamily: selectedSection.textFontFamily || "'Noto Sans Hebrew', sans-serif",
+          fontSize: selectedSection.textFontSize || 18,
+          fontWeight: selectedSection.textFontWeight || 'normal',
+          color: selectedSection.textColor || '#ffffff'
+        }}
+        onChange={(newValues) => {
+          Object.entries(newValues).forEach(([key, value]) => {
+            handleChange(`text${key.charAt(0).toUpperCase() + key.slice(1)}`, value);
+          });
+        }}
+        title="טיפוגרפיה לטקסט"
+      />
+      {/* טיפוגרפיה לכפתור */}
+      <TypographyControl
+        values={{
+          fontFamily: selectedSection.buttonFontFamily || "'Noto Sans Hebrew', sans-serif",
+          fontSize: selectedSection.buttonFontSize || 16,
+          fontWeight: selectedSection.buttonFontWeight || '500',
+          color: selectedSection.buttonTextColor || '#ffffff'
+        }}
+        onChange={(newValues) => {
+          Object.entries(newValues).forEach(([key, value]) => {
+            handleChange(`button${key.charAt(0).toUpperCase() + key.slice(1)}`, value);
+          });
+        }}
+        title="טיפוגרפיה לכפתור"
+      />
+      {/* עיצוב כפתור */}
+      <div className="property-group">
+        <label className="property-label">סגנון כפתור</label>
+        <SelectControl
+          options={[
+            { value: 'filled', label: 'מלא' },
+            { value: 'outline', label: 'רק קו' },
+            { value: 'border', label: 'מסגרת' }
+          ]}
+          value={selectedSection.buttonStyle || 'filled'}
+          onChange={(value) => handleChange('buttonStyle', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">צבע כפתור</label>
+        <ColorPicker
+          value={selectedSection.buttonBackgroundColor || '#5271ff'}
+          onChange={(value) => handleChange('buttonBackgroundColor', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">צבע גבול כפתור</label>
+        <ColorPicker
+          value={selectedSection.buttonBorderColor || '#5271ff'}
+          onChange={(value) => handleChange('buttonBorderColor', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">עובי גבול כפתור (פיקסלים)</label>
+        <RangeSlider
+          min={0}
+          max={10}
+          value={selectedSection.buttonBorderWidth || 2}
+          onChange={(value) => handleChange('buttonBorderWidth', value)}
+        />
+      </div>
+      {/* עיצוב לתמונה */}
+      <div className="property-group">
+        <label className="property-label">עובי גבול תמונה (פיקסלים)</label>
+        <RangeSlider
+          min={0}
+          max={10}
+          value={selectedSection.imageBorderWidth || 0}
+          onChange={(value) => handleChange('imageBorderWidth', value)}
+        />
+      </div>
+      <div className="property-group">
+        <label className="property-label">צבע גבול תמונה</label>
+        <ColorPicker
+          value={selectedSection.imageBorderColor || '#cccccc'}
+          onChange={(value) => handleChange('imageBorderColor', value)}
+        />
+      </div>
+    </>
+  );
+
       case 'button':
         return (
           <>

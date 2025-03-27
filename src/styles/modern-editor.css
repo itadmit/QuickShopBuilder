@@ -220,7 +220,7 @@ input, textarea, select {
   border-radius: var(--radius-md);
   min-height: 100%;
   padding: 40px;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   box-shadow: var(--shadow-medium);
   position: relative;

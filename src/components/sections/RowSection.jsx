@@ -2,203 +2,53 @@ import React, { useState } from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { FiSettings, FiX } from 'react-icons/fi';
 
-// ייבוא הווידג'טים שיכולים להיות בתוך עמודות
 import ButtonSection from './ButtonSection';
 import ImageSection from './ImageSection';
 import TextSection from './TextSection';
 import VideoSection from './VideoSection';
 
 const RowSection = ({ data }) => {
-  const { 
+  const {
     id,
+    rowWidthType = 'full',
+    rowCustomWidth = 1000,
+
     columns = 2,
     columnsContent = Array(columns).fill({ widgets: [] }),
     columnGap = 20,
     columnWidths = Array(columns).fill(100 / columns),
     columnsResponsive = true,
+    mobileColumns = 1,
+    tabletColumns = Math.min(2, columns),
     columnBackgroundColor = 'rgba(248, 249, 251, 0.7)',
-    
-    // מאפייני רקע
+
+    // הוספנו שני פרופס חדשים למסגרת העמודות:
+    columnBorderWidth = 0,
+    columnBorderColor = '#cccccc',
+
     backgroundColor,
     backgroundImage,
-    
-    // מאפייני טיפוגרפיה
     textColor,
-    
-    // מאפייני מרווחים
+
     marginTop, marginRight, marginBottom, marginLeft,
     paddingTop, paddingRight, paddingBottom, paddingLeft,
-    
-    // מאפייני אנימציה
+
     animation, animationDuration, animationDelay
   } = data;
 
-  const { 
-    isDragging, 
-    selectedSectionId, 
+  const {
+    isDragging,
+    selectedSectionId,
     setSelectedSectionId,
-    updateSection, 
+    updateSection,
     showToast
   } = useEditor();
-  
+
   const [activeDropColumn, setActiveDropColumn] = useState(null);
 
-  // פונקציה לרינדור ווידג'ט בהתאם לסוג
-  const renderWidget = (widget) => {
-    const widgetData = { ...widget }; // העתק של נתוני הווידג'ט
-    
-    switch (widget.type) {
-      case 'button':
-        return <ButtonSection data={widgetData} />;
-      case 'image':
-        return <ImageSection data={widgetData} />;
-      case 'text':
-        return <TextSection data={widgetData} />;
-      case 'video':
-        return <VideoSection data={widgetData} />;
-      default:
-        return <div>סוג ווידג'ט לא מוכר: {widget.type}</div>;
-    }
-  };
-
-  // סגנונות לקונטיינר
-  const containerStyle = {
-    marginTop: marginTop || '',
-    marginRight: marginRight || '',
-    marginBottom: marginBottom || '',
-    marginLeft: marginLeft || '',
-    paddingTop: paddingTop || '30px',
-    paddingRight: paddingRight || '30px',
-    paddingBottom: paddingBottom || '30px',
-    paddingLeft: paddingLeft || '30px',
-    backgroundColor: backgroundColor || '',
-    backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
-    backgroundSize: backgroundImage ? 'cover' : 'auto',
-    backgroundPosition: backgroundImage ? 'center' : 'initial',
-    color: textColor || 'inherit',
-    animation: animation ? `${animation} ${animationDuration || 0.5}s ${animationDelay || 0}s` : 'none',
-    position: 'relative'
-  };
-
-  // סגנונות לשורה
-  const rowStyle = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: `${columnGap}px`,
-    position: 'relative',
-    zIndex: 2
-  };
-
-  // פונקציה לטיפול בגרירה מעל עמודה
-  const handleColumnDragOver = (e, columnIndex) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // קביעת אפקט הגרירה
-    e.dataTransfer.dropEffect = 'copy';
-    
-    // סימון העמודה הפעילה
-    setActiveDropColumn(columnIndex);
-  };
-
-  // פונקציה לטיפול בעזיבת גרירה מעל עמודה
-  const handleColumnDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // ביטול סימון העמודה
-    setActiveDropColumn(null);
-  };
-
-  // פונקציה לטיפול בשחרור (drop) על עמודה
-  const handleColumnDrop = (e, columnIndex) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("Drop event at column:", columnIndex);
-    setActiveDropColumn(null);
-    
-    try {
-      // ניסיון לקבל נתונים מהדראג
-      let dragData;
-      
-      // ניסיון לקרוא מ-dataTransfer
-      let jsonData;
-      let textData;
-      
-      try {
-        jsonData = e.dataTransfer.getData('application/json');
-      } catch (error) {
-        console.warn('Could not read application/json from dataTransfer', error);
-      }
-      
-      try {
-        textData = e.dataTransfer.getData('text/plain');
-      } catch (error) {
-        console.warn('Could not read text/plain from dataTransfer', error);
-      }
-      
-      if (jsonData) {
-        dragData = JSON.parse(jsonData);
-        console.log("Successfully parsed JSON data from dataTransfer", dragData);
-      } else if (textData) {
-        dragData = JSON.parse(textData);
-        console.log("Successfully parsed text data from dataTransfer", dragData);
-      } else {
-        // ניסיון לקרוא מ-localStorage כגיבוי
-        const localData = localStorage.getItem('dragData');
-        
-        if (localData) {
-          dragData = JSON.parse(localData);
-          console.log("Retrieved drag data from localStorage", dragData);
-        } else {
-          console.warn("No drag data found in dataTransfer or localStorage");
-        }
-      }
-      
-      if (dragData && dragData.type) {
-        // זה רכיב/ווידג'ט חדש 
-        console.log("Adding new widget of type", dragData.type, "to column", columnIndex);
-        
-        // יצירת עותק של תוכן העמודות
-        let newColumnsContent = [...columnsContent];
-        
-        // במקרה שהמערך קצר מהאינדקס, נרחיב אותו
-        while (newColumnsContent.length <= columnIndex) {
-          newColumnsContent.push({ widgets: [] });
-        }
-        
-        // וידוא שהעמודה מאותחלת נכון
-        if (!newColumnsContent[columnIndex] || !newColumnsContent[columnIndex].widgets) {
-          newColumnsContent[columnIndex] = { widgets: [] };
-        }
-        
-        // בניית אובייקט ווידג'ט לפי סוג
-        const newWidget = createWidgetByType(dragData.type, dragData.name);
-        
-        // הוספת הווידג'ט לעמודה
-        newColumnsContent[columnIndex].widgets.push(newWidget);
-        
-        // עדכון הסקשן
-        updateSection(id, { columnsContent: newColumnsContent });
-        showToast && showToast(`נוסף ווידג'ט ${dragData.name || dragData.type} לעמודה`, "success");
-      } else {
-        console.warn("Invalid drag data format or no type information", dragData);
-      }
-    } catch (error) {
-      console.error('Error processing drop:', error);
-      showToast && showToast("אירעה שגיאה בהוספת הווידג'ט", "error");
-    } finally {
-      // ניקוי נתוני גרירה בכל מקרה
-      localStorage.removeItem('dragData');
-    }
-  };
-
-  // פונקציה ליצירת ווידג'ט לפי סוג
+  // יצירת ווידג'ט חדש לפי סוג
   const createWidgetByType = (type, name) => {
     const widgetId = `widget-${Date.now()}`;
-    
-    // תבניות ברירת מחדל לפי סוג הווידג'ט
     const defaultWidgets = {
       button: {
         id: widgetId,
@@ -240,44 +90,166 @@ const RowSection = ({ data }) => {
         alignment: 'center'
       }
     };
-
     return defaultWidgets[type] || { id: widgetId, type, name: name || type };
   };
 
-  // פונקציה לטיפול בבחירת ווידג'ט - מתוקנת
+  // רינדור ווידג'ט בהתאם לסוג
+  const renderWidget = (widget) => {
+    const widgetData = { ...widget };
+    switch (widget.type) {
+      case 'button': return <ButtonSection data={widgetData} />;
+      case 'image':  return <ImageSection data={widgetData} />;
+      case 'text':   return <TextSection data={widgetData} />;
+      case 'video':  return <VideoSection data={widgetData} />;
+      default:       return <div>סוג ווידג'ט לא מוכר: {widget.type}</div>;
+    }
+  };
+
+  // חישוב רוחב חיצוני של השורה (Full/Container/Custom)
+  const resolveOuterWidth = () => {
+    switch (rowWidthType) {
+      case 'container':
+        return '1000px';
+      case 'custom':
+        return `${rowCustomWidth || 1000}px`;
+      case 'full':
+      default:
+        return '100%';
+    }
+  };
+
+  const outerContainerStyle = {
+    width: resolveOuterWidth(),
+    margin: '0 auto' // לרוחב מלא, אפשר להשאיר auto כדי למרכז. 
+  };
+
+  // סגנונות החלק הפנימי של השורה
+  const containerStyle = {
+    marginTop: marginTop || '',
+    marginRight: marginRight || '',
+    marginBottom: marginBottom || '',
+    marginLeft: marginLeft || '',
+    paddingTop: paddingTop || '30px',
+    paddingRight: paddingRight || '30px',
+    paddingBottom: paddingBottom || '30px',
+    paddingLeft: paddingLeft || '30px',
+    backgroundColor: backgroundColor || '',
+    backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+    backgroundSize: backgroundImage ? 'cover' : 'auto',
+    backgroundPosition: backgroundImage ? 'center' : 'initial',
+    color: textColor || 'inherit',
+    animation: animation ? `${animation} ${animationDuration || 0.5}s ${animationDelay || 0}s` : 'none',
+    position: 'relative'
+  };
+
+  // סגנונות לרמת השורה עצמה
+  const rowStyle = {
+    display: 'flex',
+    flexWrap: columnsResponsive ? 'wrap' : 'nowrap',
+    gap: `${columnGap}px`,
+    position: 'relative',
+    zIndex: 2
+  };
+
+  // פונקציות לגרירה/שחרור ווידג'טים לעמודות
+  const handleColumnDragOver = (e, columnIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+    setActiveDropColumn(columnIndex);
+  };
+
+  const handleColumnDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveDropColumn(null);
+  };
+
+  const handleColumnDrop = (e, columnIndex) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveDropColumn(null);
+    try {
+      let dragData;
+      const jsonData = e.dataTransfer.getData('application/json');
+      const textData = e.dataTransfer.getData('text/plain');
+
+      if (jsonData) {
+        dragData = JSON.parse(jsonData);
+      } else if (textData) {
+        dragData = JSON.parse(textData);
+      } else {
+        const localData = localStorage.getItem('dragData');
+        if (localData) {
+          dragData = JSON.parse(localData);
+        }
+      }
+
+      if (dragData && dragData.type) {
+        let newColumnsContent = [...columnsContent];
+        while (newColumnsContent.length <= columnIndex) {
+          newColumnsContent.push({ widgets: [] });
+        }
+        if (!newColumnsContent[columnIndex] || !newColumnsContent[columnIndex].widgets) {
+          newColumnsContent[columnIndex] = { widgets: [] };
+        }
+        const newWidget = createWidgetByType(dragData.type, dragData.name);
+        newColumnsContent[columnIndex].widgets.push(newWidget);
+        updateSection(id, { columnsContent: newColumnsContent });
+        showToast && showToast(`נוסף ווידג'ט ${dragData.name || dragData.type} לעמודה`, "success");
+      }
+    } catch (error) {
+      console.error('Error processing drop:', error);
+      showToast && showToast("אירעה שגיאה בהוספת הווידג'ט", "error");
+    } finally {
+      localStorage.removeItem('dragData');
+    }
+  };
+
+  // בחירת ווידג'ט
   const handleWidgetSelect = (widget, columnIndex, widgetIndex) => {
-    console.log('Widget selected:', widget.id, 'Column:', columnIndex, 'Index:', widgetIndex);
-    
-    // במקום להשתמש ב-setSelectedWidgetInfo (שכנראה לא קיים)
-    // נעדכן את הווידג'ט ישירות עם המידע שצריך
     const updatedWidget = {
       ...widget,
       _parentSectionId: id,
       _columnIndex: columnIndex,
       _widgetIndex: widgetIndex
     };
-    
-    // עדכון העמודה עם המידע הנוסף
     const newColumnsContent = [...columnsContent];
     if (newColumnsContent[columnIndex] && newColumnsContent[columnIndex].widgets) {
       newColumnsContent[columnIndex].widgets[widgetIndex] = updatedWidget;
       updateSection(id, { columnsContent: newColumnsContent });
     }
-    
-    // עדכון ה-selectedSectionId כדי לתמוך בבחירת הווידג'ט בפאנל ההגדרות
     setSelectedSectionId(widget.id);
   };
 
-  // רינדור העמודות בשורה
+  // הסרת ווידג'ט
+  const removeWidget = (columnIndex, widgetIndex) => {
+    if (window.confirm('האם אתה בטוח שברצונך למחוק את הווידג\'ט?')) {
+      const newColumnsContent = [...columnsContent];
+      if (newColumnsContent[columnIndex] && Array.isArray(newColumnsContent[columnIndex].widgets)) {
+        newColumnsContent[columnIndex].widgets.splice(widgetIndex, 1);
+        updateSection(id, { columnsContent: newColumnsContent });
+        showToast && showToast("הווידג'ט נמחק בהצלחה", "success");
+      }
+    }
+  };
+
+  // רינדור העמודות
   const renderColumns = () => {
-    // ודא שיש לנו את המספר הנכון של עמודות
     const currentColumnsContent = columnsContent || Array(columns).fill({ widgets: [] });
-    
+    const columnClasses = {
+      1: 'col-full',
+      2: 'col-half',
+      3: 'col-third',
+      4: 'col-quarter',
+      5: 'col-fifth',
+      6: 'col-sixth'
+    };
+
     return Array(columns).fill().map((_, index) => {
-      // חישוב הרוחב של העמודה
-      const columnWidth = columnWidths[index] || (100 / columns);
+      const columnWidth = columnWidths && columnWidths[index] ? columnWidths[index] : (100 / columns);
       
-      // סגנונות לעמודה
+      // הגדרת סגנון לעמודה כולל מסגרת (border)
       const columnStyle = {
         flex: `0 0 calc(${columnWidth}% - ${(columnGap * (columns - 1)) / columns}px)`,
         position: 'relative',
@@ -285,27 +257,34 @@ const RowSection = ({ data }) => {
         padding: '10px',
         backgroundColor: columnBackgroundColor || 'rgba(248, 249, 251, 0.7)',
         borderRadius: '4px',
+
+        // **מסגרת חדשה**:
+        border: `${columnBorderWidth}px solid ${columnBorderColor}`,
+
+        // הצללה בעת גרירה
         boxShadow: isDragging ? '0 0 0 2px #5271ff' : 'none',
         transition: 'box-shadow 0.2s ease'
       };
-      
-      // הגדרות העמודה
+
       const columnData = currentColumnsContent[index] || { widgets: [] };
-      
+
       return (
         <div 
           key={`column-${index}`} 
-          className={`row-column column-${index+1} ${isDragging ? 'droppable' : ''} ${activeDropColumn === index ? 'active-drop' : ''}`}
+          className={`row-column column-${index+1} ${columnClasses[columns] || ''} 
+                      ${isDragging ? 'droppable' : ''} 
+                      ${activeDropColumn === index ? 'active-drop' : ''}`}
           style={columnStyle}
           data-column-index={index}
           data-row-id={id}
+          data-tablet-columns={tabletColumns}
+          data-mobile-columns={mobileColumns}
           onDragOver={(e) => handleColumnDragOver(e, index)}
           onDragLeave={handleColumnDragLeave}
           onDrop={(e) => handleColumnDrop(e, index)}
         >
           <div className="column-content">
             {Array.isArray(columnData.widgets) && columnData.widgets.length > 0 ? (
-              // יש ווידג'טים בעמודה - הצג אותם
               <div className="column-widgets">
                 {columnData.widgets.map((widget, widgetIndex) => (
                   <div 
@@ -328,8 +307,6 @@ const RowSection = ({ data }) => {
                         className="widget-settings-button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // פתיחת הגדרות הווידג'ט - כאן התיקון העיקרי
-                          console.log('Settings button clicked for widget:', widget.id);
                           handleWidgetSelect(widget, index, widgetIndex);
                         }}
                         style={{
@@ -347,28 +324,11 @@ const RowSection = ({ data }) => {
                       >
                         <FiSettings size={14} />
                       </button>
-                      
                       <button
                         className="widget-remove-button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          
-                          if (window.confirm('האם אתה בטוח שברצונך למחוק את הווידג\'ט?')) {
-                            // הסרת הווידג'ט
-                            const updatedWidgets = [...columnData.widgets];
-                            updatedWidgets.splice(widgetIndex, 1);
-                            
-                            // עדכון העמודה
-                            const newColumnsContent = [...columnsContent];
-                            newColumnsContent[index] = { 
-                              ...newColumnsContent[index], 
-                              widgets: updatedWidgets 
-                            };
-                            
-                            // עדכון הסקשן
-                            updateSection(id, { columnsContent: newColumnsContent });
-                            showToast && showToast("הווידג'ט נמחק בהצלחה", "success");
-                          }
+                          removeWidget(index, widgetIndex);
                         }}
                         style={{
                           background: '#fff',
@@ -386,7 +346,6 @@ const RowSection = ({ data }) => {
                         <FiX size={14} />
                       </button>
                     </div>
-                    
                     <div className="widget-content" style={{
                       padding: '5px',
                       border: '1px solid #e0e0e0',
@@ -402,13 +361,11 @@ const RowSection = ({ data }) => {
                 ))}
               </div>
             ) : (
-              // אין ווידג'טים - הצג הודעה
               <div className="empty-column-placeholder">
                 <div className="placeholder-text">גרור ווידג'טים לכאן</div>
               </div>
             )}
           </div>
-          
           {isDragging && (
             <div className="column-drop-indicator" style={{
               position: 'absolute',
@@ -437,26 +394,24 @@ const RowSection = ({ data }) => {
       );
     });
   };
-  
 
   return (
-    <div className="row-section" style={containerStyle} data-responsive={columnsResponsive}>
-      {/* אם יש תמונת רקע, הוסף שכבת כיסוי */}
-      {backgroundImage && (
-        <div className="row-overlay" style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          zIndex: 1
-        }}></div>
-      )}
-      
-      {/* שורת העמודות */}
-      <div className="row-columns" style={rowStyle}>
-        {renderColumns()}
+    <div className="row-section" style={outerContainerStyle} data-responsive={columnsResponsive}>
+      <div className="row-section-inner" style={containerStyle}>
+        {backgroundImage && (
+          <div className="row-overlay" style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            zIndex: 1
+          }}></div>
+        )}
+        <div className="row-columns" style={rowStyle}>
+          {renderColumns()}
+        </div>
       </div>
     </div>
   );

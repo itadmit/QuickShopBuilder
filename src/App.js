@@ -6,8 +6,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { EditorProvider } from './contexts/EditorContext';
 import Editor from './components/editor/Editor';
 import './styles/modern-editor.css';
-import './styles/widget-settings.css'; // הוספת הסגנון החדש לחלון ההגדרות
-
+import './styles/widget-settings.css';
 function App() {
   // בדיקה שיש מידע שרת
   useEffect(() => {

@@ -269,3 +269,296 @@ input:checked + .switch-slider:before {
   transform: translateX(20px); /* או 20px בהתאם להעדפה */
   background-color: #7536ff; /* צבע העיגול */
 }
+
+
+
+
+
+
+/* סגנונות עבור רכיב שורה מתקדם עם תמיכה בעד 6 עמודות */
+
+/* סגנונות בסיסיים לעמודות */
+.row-section {
+  overflow: hidden;
+  width: 100%;
+}
+
+.row-columns {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* סגנונות לעמודות במצב רגיל */
+.row-column {
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+/* סגנונות בסיסיים לעמודות לפי מספר */
+.row-column.col-full {
+  flex: 0 0 100%;
+  width: 100%;
+}
+
+.row-column.col-half {
+  flex: 0 0 calc(50% - 10px);
+  width: calc(50% - 10px);
+}
+
+.row-column.col-third {
+  flex: 0 0 calc(33.333% - 14px);
+  width: calc(33.333% - 14px);
+}
+
+.row-column.col-quarter {
+  flex: 0 0 calc(25% - 15px);
+  width: calc(25% - 15px);
+}
+
+.row-column.col-fifth {
+  flex: 0 0 calc(20% - 16px);
+  width: calc(20% - 16px);
+}
+
+.row-column.col-sixth {
+  flex: 0 0 calc(16.666% - 17px);
+  width: calc(16.666% - 17px);
+}
+
+/* סגנונות לאזור גרירה פעיל */
+.row-column.active-drop {
+  box-shadow: 0 0 0 2px #5271ff, 0 0 10px rgba(82, 113, 255, 0.5);
+}
+
+/* סגנונות למצב עמודה ריקה */
+.empty-column-placeholder {
+  padding: 20px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: #aaa;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* סגנונות לווידג'טים בתוך העמודות */
+.column-widget {
+  position: relative;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+}
+
+.column-widget.selected {
+  z-index: 2;
+}
+
+.widget-content {
+  min-height: 30px;
+  width: 100%;
+}
+
+/* התאמות רספונסיביות לפי הגדרות המשתמש */
+
+/* --- התאמות למובייל (מתחת ל-768px) --- */
+@media (max-width: 767px) {
+  /* ברירת מחדל - עמודה אחת במובייל */
+  [data-responsive="true"] .row-column {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+  }
+  
+  /* מצב 2 עמודות במובייל */
+  [data-responsive="true"] .row-column[data-mobile-columns="2"] {
+    flex: 0 0 calc(50% - 10px) !important;
+    width: calc(50% - 10px) !important;
+  }
+}
+
+/* --- התאמות לטאבלט (768px-992px) --- */
+@media (min-width: 768px) and (max-width: 991px) {
+  /* ברירת מחדל - עמודה אחת בטאבלט */
+  [data-responsive="true"] .row-column[data-tablet-columns="1"] {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+  }
+  
+  /* מצב 2 עמודות בטאבלט */
+  [data-responsive="true"] .row-column[data-tablet-columns="2"] {
+    flex: 0 0 calc(50% - 10px) !important;
+    width: calc(50% - 10px) !important;
+  }
+  
+  /* מצב 3 עמודות בטאבלט */
+  [data-responsive="true"] .row-column[data-tablet-columns="3"] {
+    flex: 0 0 calc(33.333% - 14px) !important;
+    width: calc(33.333% - 14px) !important;
+  }
+  
+  /* מצב 4 עמודות בטאבלט */
+  [data-responsive="true"] .row-column[data-tablet-columns="4"] {
+    flex: 0 0 calc(25% - 15px) !important;
+    width: calc(25% - 15px) !important;
+  }
+}
+
+/* --- התאמות למכשירים גדולים יותר (מעל 992px) --- */
+@media (min-width: 992px) {
+  /* אין צורך בדריסת הסגנונות ברירת המחדל */
+}
+
+/* סגנונות לתצוגת חיווי גרירה */
+.column-drop-indicator {
+  border: 2px dashed #5271ff;
+  background-color: rgba(82, 113, 255, 0.05);
+  border-radius: 4px;
+}
+
+/* סגנונות לחזותיות התראות */
+.drop-here-text {
+  padding: 8px 16px;
+  background-color: rgba(82, 113, 255, 0.1);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #5271ff;
+}
+
+/* אנימציה לכפתורי פעולה */
+.widget-settings-button,
+.widget-remove-button {
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.widget-settings-button:hover,
+.widget-remove-button:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* חוקים נוספים לתיקון קריסת שורה */
+.row-column[data-mobile-columns] {
+  box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+  [data-responsive="true"] .row-columns {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+
+/* RangeSlider כללי */
+.range-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.range-slider-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.range-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row-reverse;
+}
+
+/* כפתורי +/- */
+.range-slider-button {
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.2s ease;
+}
+
+.range-slider-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.range-slider-button:hover:not(:disabled) {
+  background-color: #e8e8e8;
+}
+
+/* מסילה */
+.range-slider-track-container {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  background: #e9e9e9;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.range-slider-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  border-radius: 3px;
+}
+
+.range-slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #7a56ff; /* צבע מילוי */
+  border-radius: 3px 0 0 3px;
+}
+
+/* הנקודה (thumb) */
+.range-slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background: #7a56ff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.range-slider-thumb:hover {
+  transform: translateY(-50%) scale(1.2);
+}
+
+/* שדה הזנת הערך */
+.range-slider-input-row {
+  display: flex;
+  justify-content: center;
+}
+
+.range-slider-value-input {
+  width: 60px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+  margin-top: 4px;
+}

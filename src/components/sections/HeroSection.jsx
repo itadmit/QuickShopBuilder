@@ -62,12 +62,18 @@ const HeroSection = ({ data }) => {
     backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    animation: animation ? `${animation} ${animationDuration || 0.5}s ${animationDelay || 0}s` : 'none'
+    animation: animation ? `${animation} ${animationDuration || 0.5}s ${animationDelay || 0}s` : 'none',
+    position: 'relative'
   };
 
-  // סגנונות לשיכבת האובר-ליי
+  // סגנונות לשכבת האוברליי (אם יש)
   const overlayStyle = {
-    backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`
+    backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
   };
 
   // סגנונות לכותרת
@@ -84,7 +90,7 @@ const HeroSection = ({ data }) => {
     margin: '0 0 20px'
   };
 
-  // סגנונות לטקסט משנה
+  // סגנונות לכותרת משנה
   const subtitleStyle = {
     fontFamily: textFontFamily || "'Noto Sans Hebrew', sans-serif",
     fontSize: textFontSize ? `${textFontSize}px` : '18px',
@@ -117,7 +123,7 @@ const HeroSection = ({ data }) => {
 
   return (
     <div className="hero-section" style={containerStyle}>
-      <div className="hero-overlay" style={overlayStyle}></div>
+      {backgroundImage && <div className="hero-overlay" style={overlayStyle}></div>}
       <div className="hero-content">
         <h1 style={titleStyle}>{title}</h1>
         {subtitle && <p style={subtitleStyle}>{subtitle}</p>}
