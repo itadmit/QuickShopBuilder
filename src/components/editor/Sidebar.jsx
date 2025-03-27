@@ -1,7 +1,7 @@
 // תיקון לקובץ Sidebar.jsx
 import React from 'react';
 import { useEditor } from '../../contexts/EditorContext';
-import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail, FiVideo, FiBox, FiFileText} from 'react-icons/fi';
+import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail, FiStar, FiVideo, FiBox, FiTarget, FiAlignJustify, FiFileText } from 'react-icons/fi';
 
 
 // רכיב פריט גרירה משופר
@@ -15,8 +15,9 @@ const DraggableItem = ({ component, icon }) => {
       type: component.id, 
       name: component.name,
       isNew: true,
-      isWidget: component.isWidget || false // סימון אם זה ווידג'ט או סקשן
+      rowCompatible: component.rowCompatible || false // מוסיף מידע על תאימות שורה
     };
+
     
     // שמירה בשני סוגי פורמטים לתמיכה טובה יותר בדפדפנים שונים
     e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
@@ -87,23 +88,26 @@ const DraggableItem = ({ component, icon }) => {
   
   return (
     <div
-      className={`component-item ${component.isWidget ? 'widget-item' : ''}`}
-      draggable="true"
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onClick={handleClick}
-    >
-      <div className="component-icon">
-        {icon}
-      </div>
-      <div className="component-name">
-        {component.name}
-      </div>
-      <div className="drag-hint">
-        {component.isWidget ? "גרור לתוך עמודה" : "גרור או לחץ להוספה"}
-      </div>
+    className={`component-item ${component.rowCompatible ? 'row-compatible' : ''}`}
+    draggable="true"
+    onDragStart={handleDragStart}
+    onDragEnd={handleDragEnd}
+    onClick={handleClick}
+  >
+    <div className="component-icon">
+      {icon}
     </div>
-  );
+    <div className="component-name">
+      {component.name}
+    </div>
+    <div className="drag-hint">גרור או לחץ להוספה</div>
+    {component.rowCompatible && (
+      <div className="row-compatibility-badge" title="ניתן לגרירה בתוך שורה">
+        <span className="row-icon">⊞</span>
+      </div>
+    )}
+  </div>
+);
 };
 
 const Sidebar = () => {
@@ -134,8 +138,12 @@ const Sidebar = () => {
         return <FiFileText size={24} />;
       case 'video':
         return <FiVideo size={24} />;
-      default:
-        return <FiList size={24} />;
+        case 'cta':
+          return <FiTarget size={24} />; // החלפנו את FiZap ב-FiTarget
+        case 'icon':
+          return <FiStar size={24} />;
+    default:
+      return <FiList size={24} />;
     }
   };
 
@@ -148,7 +156,8 @@ const Sidebar = () => {
         { id: 'hero', name: 'כותרת ראשית' },
         { id: 'banner', name: 'באנר' },
         { id: 'text-image', name: 'טקסט ותמונה' },
-        { id: 'row', name: 'שורת עמודות' },
+        { id: 'cta', name: 'קריאה לפעולה (CTA)', rowCompatible: true }, // מסומן כתואם שורה
+        { id: 'row', name: 'שורה', icon: <FiAlignJustify size={24} /> }
       ]
     },
     {
@@ -159,19 +168,21 @@ const Sidebar = () => {
         { id: 'testimonials', name: 'המלצות' },
         { id: 'collections', name: 'קטגוריות' },
         { id: 'newsletter', name: 'ניוזלטר' },
+        { id: 'video', name: 'וידאו' },
       ]
     },
     {
-      id: 'widgets',
-      title: 'ווידג\'טים',
+      id: 'elements',
+      title: 'אלמנטים',
       components: [
-        { id: 'button', name: 'כפתור', isWidget: true },
-        { id: 'image', name: 'תמונה', isWidget: true },
-        { id: 'text', name: 'טקסט', isWidget: true },
-        { id: 'video', name: 'וידאו', isWidget: true },
+        { id: 'icon', name: 'אייקון', rowCompatible: true }, // מסומן כתואם שורה
+        { id: 'button', name: 'כפתור' },
+        { id: 'image', name: 'תמונה', rowCompatible: true }, // גם רכיב תמונה יכול להיות בשורה
+        { id: 'text', name: 'טקסט', rowCompatible: true }   // גם רכיב טקסט יכול להיות בשורה
       ]
     }
   ];
+  
 
   return (
     <div className="sidebar">

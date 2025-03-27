@@ -71,6 +71,10 @@ const DragLayerPreview = () => {
         return <CollectionListSection data={previewData} />;
       case 'newsletter':
         return <NewsletterSection data={previewData} />;
+        case 'cta':
+          return <CTASection data={previewData} />;
+        case 'icon':
+          return <IconSection data={previewData} />;
       default:
         return <div>רכיב {itemToPreview.name}</div>;
     }
@@ -121,6 +125,28 @@ const DragLayerPreview = () => {
           collections: [],
           count: 3
         };
+          // נוסיף את הסקשנים החדשים
+    case 'cta':
+      return {
+        title: 'כותרת CTA',
+        content: 'תוכן כאן יעודד את המשתמשים לפעולה',
+        buttonText: 'לחץ כאן',
+        buttonLink: '#',
+        image: '/builder/build/images/placeholders/cta-bg.jpg',
+        overlayType: 'bottom',
+        overlayOpacity: 0.5,
+      };
+    case 'icon':
+      return {
+        iconName: 'FiStar',
+        iconSize: 40,
+        iconColor: '#5271ff',
+        iconStrokeWidth: 2,
+        iconAlignment: 'center',
+        title: 'כותרת אייקון',
+        content: 'תוכן טקסט שמתאר את האייקון',
+      };
+
       case 'newsletter':
         return {
           title: 'הרשמה לעדכונים',

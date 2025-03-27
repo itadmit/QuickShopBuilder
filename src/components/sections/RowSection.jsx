@@ -7,6 +7,11 @@ import ImageSection from './ImageSection';
 import TextSection from './TextSection';
 import VideoSection from './VideoSection';
 
+import CTASection from './CTASection';
+import IconSection from './IconSection';
+
+
+
 const RowSection = ({ data }) => {
   const {
     id,
@@ -88,7 +93,32 @@ const RowSection = ({ data }) => {
         videoType: 'youtube',
         aspectRatio: '16:9',
         alignment: 'center'
-      }
+      },
+       // הוספת תמיכה בווידג'טים החדשים
+    cta: {
+      id: widgetId,
+      type: 'cta',
+      name: name || 'קריאה לפעולה',
+      title: 'כותרת קריאה לפעולה',
+      content: 'תוכן כאן יעודד את המשתמשים לפעולה',
+      buttonText: 'לחץ כאן',
+      buttonLink: '#',
+      image: '/images/placeholders/hero-bg.jpg',
+      overlayType: 'bottom',
+      overlayOpacity: 0.5,
+    },
+    icon: {
+      id: widgetId,
+      type: 'icon',
+      name: name || 'אייקון',
+      iconName: 'FiStar',
+      iconSize: 40,
+      iconColor: '#5271ff',
+      iconStrokeWidth: 2,
+      iconAlignment: 'center',
+      title: 'כותרת אייקון',
+      content: 'תוכן טקסט שמתאר את האייקון',
+    }
     };
     return defaultWidgets[type] || { id: widgetId, type, name: name || type };
   };
@@ -101,6 +131,8 @@ const RowSection = ({ data }) => {
       case 'image':  return <ImageSection data={widgetData} />;
       case 'text':   return <TextSection data={widgetData} />;
       case 'video':  return <VideoSection data={widgetData} />;
+      case 'cta':    return <CTASection data={widgetData} />;
+      case 'icon':   return <IconSection data={widgetData} />;
       default:       return <div>סוג ווידג'ט לא מוכר: {widget.type}</div>;
     }
   };
@@ -155,15 +187,74 @@ const RowSection = ({ data }) => {
   const handleColumnDragOver = (e, columnIndex) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    try {
+      let dragData;
+      // בדיקה אם יש נתונים ב-dataTransfer
+      try {
+        const textData = e.dataTransfer.getData('text/plain');
+        if (textData) {
+          dragData = JSON.parse(textData);
+        }
+      } catch (error) {
+        // במקרה של שגיאה, ננסה לקחת את המידע מ-localStorage
+        const localData = localStorage.getItem('dragData');
+        if (localData) {
+          dragData = JSON.parse(localData);
+        }
+      }
+      
+      // בדיקה אם הווידג'ט תואם לשורה
+      if (dragData && dragData.type) {
+        // רשימת הווידג'טים שיכולים להיות בשורה
+        const allowedWidgets = ['cta', 'icon', 'button', 'image', 'text', 'video'];
+        
+        if (!allowedWidgets.includes(dragData.type)) {
+          // אם הווידג'ט לא מורשה, נציג אפקט לא תואם
+          e.dataTransfer.dropEffect = 'none';
+          
+          // הוספת קלאס ויזואלי להצגת השגיאה
+          const columnElement = e.currentTarget;
+          columnElement.classList.add('drop-not-allowed');
+          
+          // הוספת הודעת שגיאה
+          let errorMessage = columnElement.querySelector('.incompatible-drop-message');
+          if (!errorMessage) {
+            errorMessage = document.createElement('div');
+            errorMessage.className = 'incompatible-drop-message';
+            errorMessage.textContent = 'לא ניתן לגרור רכיב זה לשורה';
+            columnElement.appendChild(errorMessage);
+          }
+          
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('Error checking widget compatibility', error);
+    }
+    
+    // אם הגענו לכאן, הווידג'ט תואם
     e.dataTransfer.dropEffect = 'copy';
     setActiveDropColumn(columnIndex);
   };
+  
 
   const handleColumnDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // הסרת קלאס אפקט לא תואם
+    e.currentTarget.classList.remove('drop-not-allowed');
+    
+    // הסרת הודעת שגיאה אם קיימת
+    const errorMessage = e.currentTarget.querySelector('.incompatible-drop-message');
+    if (errorMessage) {
+      errorMessage.remove();
+    }
+    
     setActiveDropColumn(null);
   };
+  
 
   const handleColumnDrop = (e, columnIndex) => {
     e.preventDefault();

@@ -247,6 +247,28 @@ export function EditorProvider({ children }) {
         buttonLink: '/collections/all',
         backgroundImage: '/builder/build/images/placeholders/hero-bg.jpg'
       },
+      cta: {
+        id,
+        type: 'cta',
+        title: 'כותרת CTA',
+        content: 'תוכן כאן יעודד את המשתמשים לפעולה',
+        buttonText: 'לחץ כאן',
+        buttonLink: '#',
+        image: '/builder/build/images/placeholders/cta-bg.jpg',
+        overlayType: 'bottom',
+        overlayOpacity: 0.5,
+      },
+      icon: {
+        id,
+        type: 'icon',
+        iconName: 'FiStar',
+        iconSize: 40,
+        iconColor: '#5271ff',
+        iconStrokeWidth: 2,
+        iconAlignment: 'center',
+        title: 'כותרת אייקון',
+        content: 'תוכן טקסט שמתאר את האייקון',
+      },
       products: {
         id,
         type: 'products',

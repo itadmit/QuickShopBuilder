@@ -19,6 +19,8 @@ import ButtonSection from '../sections/ButtonSection';
 import ImageSection from '../sections/ImageSection';
 import TextSection from '../sections/TextSection';
 import VideoSection from '../sections/VideoSection';
+import CTASection from '../sections/CTASection';
+import IconSection from '../sections/IconSection';
 
 const Canvas = () => {
   const { 
@@ -80,6 +82,10 @@ const renderSection = (section) => {
       return <TextSection data={section} />;    // הוספנו את הרכיב הזה
     case 'video':
       return <VideoSection data={section} />;   // הוספנו את הרכיב הזה
+      case 'cta':
+      return <CTASection data={section} />;
+    case 'icon':
+      return <IconSection data={section} />;
     default:
       return <div>סוג סקשן לא מוכר: {section.type}</div>;
   }
