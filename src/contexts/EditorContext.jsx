@@ -1,4 +1,3 @@
-// EditorContext.jsx - תיקון בעיית reference לפונקציית showToast ו-setActiveDropZoneIndex
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import builderService from '../api/builderService';
 
@@ -21,10 +20,10 @@ export function EditorProvider({ children }) {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragImageElement, setDragImageElement] = useState(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
-  
+
   // State חדש למעקב אחר ווידג'טים בתוך עמודות
   const [selectedWidgetInfo, setSelectedWidgetInfo] = useState(null);
-  
+
   // משתני state נוספים
   const [storeData, setStoreData] = useState({
     storeId: window.SERVER_DATA?.storeId || null,
@@ -33,7 +32,7 @@ export function EditorProvider({ children }) {
     userId: window.SERVER_DATA?.userId || null,
     apiBasePath: window.SERVER_DATA?.apiBasePath || '/builder/api'
   });
-  
+
   // מידע על הגרירה הנוכחית
   const dragInfo = useRef({
     startX: 0,
@@ -54,7 +53,7 @@ export function EditorProvider({ children }) {
     toast.className = `toast-message ${type}`;
     toast.innerHTML = message;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       toast.classList.add('visible');
       setTimeout(() => {
@@ -65,24 +64,16 @@ export function EditorProvider({ children }) {
       }, 3000);
     }, 10);
   }, []);
-  
+
   // פונקציה למציאת ווידג'ט נבחר בתוך עמודות
   const findSelectedWidget = useCallback(() => {
     if (!selectedSectionId) return null;
-    
-    // במידה ויש מידע ב־selectedWidgetInfo, ננסה להשתמש בו
-    if (selectedWidgetInfo) {
-      const { parentSectionId, columnIndex, widgetIndex } = selectedWidgetInfo;
-      const parentSection = sections.find(section => section.id === parentSectionId);
-      if (parentSection && parentSection.columnsContent) {
-        const column = parentSection.columnsContent[columnIndex];
-        if (column && Array.isArray(column.widgets)) {
-          return column.widgets[widgetIndex] || null;
-        }
-      }
-    }
-    
-    // במידה ואין מידע קיים – חיפוש בכל הסקשנים (סוג "row")
+
+    let foundWidget = null;
+    let foundParentId = null;
+    let foundColIndex = null;
+    let foundWidgetIndex = null;
+
     for (const section of sections) {
       if (section.type === 'row' && Array.isArray(section.columnsContent)) {
         for (let colIndex = 0; colIndex < section.columnsContent.length; colIndex++) {
@@ -91,25 +82,57 @@ export function EditorProvider({ children }) {
             for (let widgetIndex = 0; widgetIndex < column.widgets.length; widgetIndex++) {
               const widget = column.widgets[widgetIndex];
               if (widget && widget.id === selectedSectionId) {
-                setSelectedWidgetInfo({
-                  parentSectionId: section.id,
-                  columnIndex: colIndex,
-                  widgetIndex: widgetIndex
-                });
-                return widget;
+                foundWidget = widget;
+                foundParentId = section.id;
+                foundColIndex = colIndex;
+                foundWidgetIndex = widgetIndex;
+                break;
               }
             }
+            if (foundWidget) break;
           }
         }
+        if (foundWidget) break;
       }
     }
-    
-    // אם לא נמצא – איפוס מידע ווידג'ט
-    setSelectedWidgetInfo(null);
+
+    if (foundWidget) {
+      const shouldUpdateInfo = !selectedWidgetInfo || 
+        selectedWidgetInfo.parentSectionId !== foundParentId ||
+        selectedWidgetInfo.columnIndex !== foundColIndex ||
+        selectedWidgetInfo.widgetIndex !== foundWidgetIndex;
+      if (shouldUpdateInfo) {
+        setTimeout(() => {
+          setSelectedWidgetInfo({
+            parentSectionId: foundParentId,
+            columnIndex: foundColIndex,
+            widgetIndex: foundWidgetIndex
+          });
+        }, 0);
+      }
+      return foundWidget;
+    }
+
+    if (selectedWidgetInfo) {
+      const { parentSectionId, columnIndex, widgetIndex } = selectedWidgetInfo;
+      const parentSection = sections.find(section => section.id === parentSectionId);
+      if (
+        parentSection &&
+        parentSection.columnsContent &&
+        parentSection.columnsContent[columnIndex] &&
+        Array.isArray(parentSection.columnsContent[columnIndex].widgets)
+      ) {
+        const widget = parentSection.columnsContent[columnIndex].widgets[widgetIndex];
+        if (widget) return widget;
+      }
+      setTimeout(() => {
+        setSelectedWidgetInfo(null);
+      }, 0);
+    }
+
     return null;
   }, [selectedSectionId, sections, selectedWidgetInfo]);
 
-  //חלק 2
   // פונקציה לעדכון ווידג'ט בתוך עמודה
   const updateWidgetInColumn = useCallback((widgetId, data) => {
     if (!selectedWidgetInfo) {
@@ -137,10 +160,12 @@ export function EditorProvider({ children }) {
       setSections(prevSections => {
         return prevSections.map(section => {
           if (section.id !== parentSectionId) return section;
-          if (!section.columnsContent || 
-              !section.columnsContent[columnIndex] || 
-              !Array.isArray(section.columnsContent[columnIndex].widgets) ||
-              !section.columnsContent[columnIndex].widgets[widgetIndex]) {
+          if (
+            !section.columnsContent ||
+            !section.columnsContent[columnIndex] ||
+            !Array.isArray(section.columnsContent[columnIndex].widgets) ||
+            !section.columnsContent[columnIndex].widgets[widgetIndex]
+          ) {
             return section;
           }
           const newColumnsContent = [...section.columnsContent];
@@ -156,7 +181,7 @@ export function EditorProvider({ children }) {
   // פונקציה למחיקת ווידג'ט מעמודה
   const deleteWidgetFromColumn = useCallback((widgetId) => {
     if (!selectedWidgetInfo && !widgetId) return;
-    
+
     if (!selectedWidgetInfo) {
       for (const section of sections) {
         if (section.type !== 'row' || !Array.isArray(section.columnsContent)) continue;
@@ -189,10 +214,12 @@ export function EditorProvider({ children }) {
       setSections(prevSections => {
         return prevSections.map(section => {
           if (section.id !== parentSectionId) return section;
-          if (!section.columnsContent || 
-              !section.columnsContent[columnIndex] || 
-              !Array.isArray(section.columnsContent[columnIndex].widgets) ||
-              !section.columnsContent[columnIndex].widgets[widgetIndex]) {
+          if (
+            !section.columnsContent ||
+            !section.columnsContent[columnIndex] ||
+            !Array.isArray(section.columnsContent[columnIndex].widgets) ||
+            !section.columnsContent[columnIndex].widgets[widgetIndex]
+          ) {
             return section;
           }
           const newColumnsContent = [...section.columnsContent];
@@ -218,14 +245,14 @@ export function EditorProvider({ children }) {
         subtitle: 'כותרת משנה',
         buttonText: 'קנה עכשיו',
         buttonLink: '/collections/all',
-        backgroundImage: '/builder/build/images/placeholders/hero-bg.jpg',
+        backgroundImage: '/builder/build/images/placeholders/hero-bg.jpg'
       },
       products: {
         id,
         type: 'products',
         title: 'מוצרים מובחרים',
         products: [],
-        count: 4,
+        count: 4
       },
       banner: {
         id,
@@ -234,7 +261,7 @@ export function EditorProvider({ children }) {
         subtitle: 'הנחה של 20% על כל החנות',
         buttonText: 'למבצע',
         buttonLink: '/collections/sale',
-        backgroundImage: '/builder/build/images/placeholders/banner-bg.jpg',
+        backgroundImage: '/builder/build/images/placeholders/banner-bg.jpg'
       },
       'text-image': {
         id,
@@ -242,7 +269,7 @@ export function EditorProvider({ children }) {
         title: 'על החנות שלנו',
         content: 'כאן מופיע תוכן טקסטואלי על החנות',
         image: '/builder/build/images/placeholders/about-img.jpg',
-        imagePosition: 'right',
+        imagePosition: 'right'
       },
       testimonials: {
         id,
@@ -250,15 +277,15 @@ export function EditorProvider({ children }) {
         title: 'לקוחות ממליצים',
         testimonials: [
           { id: 1, author: 'ישראל ישראלי', content: 'שירות מעולה ומוצרים איכותיים!' },
-          { id: 2, author: 'חנה כהן', content: 'המשלוח הגיע מהר והמוצר היה מושלם.' },
-        ],
+          { id: 2, author: 'חנה כהן', content: 'המשלוח הגיע מהר והמוצר היה מושלם.' }
+        ]
       },
       collections: {
         id,
         type: 'collections',
         title: 'קטגוריות פופולריות',
         collections: [],
-        count: 3,
+        count: 3
       },
       newsletter: {
         id,
@@ -267,7 +294,7 @@ export function EditorProvider({ children }) {
         subtitle: 'קבלו עדכונים ומבצעים ישירות למייל',
         buttonText: 'הרשמה',
         backgroundImage: null,
-        backgroundColor: '#f7f7f7',
+        backgroundColor: '#f7f7f7'
       },
       row: {
         id,
@@ -318,9 +345,8 @@ export function EditorProvider({ children }) {
         videoType: 'youtube',
         aspectRatio: '16:9',
         alignment: 'center'
-      },
+      }
     };
-
     return defaultTypeSections[sectionType] || defaultTypeSections['text-image'];
   };
 
@@ -338,8 +364,8 @@ export function EditorProvider({ children }) {
 
   // פונקציה לעדכון סקשן קיים
   const updateSection = useCallback((sectionId, data) => {
-    setSections(prevSections => 
-      prevSections.map(section => 
+    setSections(prevSections =>
+      prevSections.map(section =>
         section.id === sectionId ? { ...section, ...data } : section
       )
     );
@@ -356,7 +382,7 @@ export function EditorProvider({ children }) {
   // פונקציה לשינוי סדר הסקשנים
   const reorderSections = useCallback((sourceIndex, destinationIndex) => {
     console.log(`Reordering section from index ${sourceIndex} to index ${destinationIndex}`);
-    if (sourceIndex < 0 || destinationIndex < 0 || 
+    if (sourceIndex < 0 || destinationIndex < 0 ||
         sourceIndex >= sections.length || destinationIndex >= sections.length) {
       console.warn('Invalid indices for reordering:', sourceIndex, destinationIndex);
       return;
@@ -373,7 +399,7 @@ export function EditorProvider({ children }) {
     setSelectedSectionId(removed.id);
   }, [sections, setSelectedSectionId]);
 
-  // פונקציה לניקוי כל אלמנטי הגרירה מה-DOM
+  // פונקציה לניקוי אלמנטי גרירה מה-DOM
   const cleanupDragElements = useCallback(() => {
     if (dragImageElement) {
       try {
@@ -396,7 +422,7 @@ export function EditorProvider({ children }) {
     }
   }, [dragImageElement]);
 
-  // פונקציה לעדכון מיקום אלמנט הגרירה
+  // עדכון מיקום אלמנט הגרירה
   const updateDragImagePosition = useCallback((e) => {
     if (dragImageElement) {
       dragImageElement.style.left = `${e.clientX}px`;
@@ -404,7 +430,7 @@ export function EditorProvider({ children }) {
     }
   }, [dragImageElement]);
 
-  // פונקציה לסיום גרירה
+  // סיום גרירה
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
     setDraggedItem(null);
@@ -421,7 +447,7 @@ export function EditorProvider({ children }) {
     window.localStorage.removeItem('dragData');
   }, [cleanupDragElements, updateDragImagePosition]);
 
-  // פונקציה לטיפול בגרירת רכיב חדש מהסיידבר
+  // טיפול בגרירת רכיב חדש מהסיידבר
   const handleSidebarDragStart = useCallback((item) => {
     console.log('התחלת גרירת רכיב חדש:', item);
     setDraggedItem(item);
@@ -450,7 +476,7 @@ export function EditorProvider({ children }) {
     return dragImage;
   }, [updateDragImagePosition]);
 
-  // פונקציה לטיפול בשחרור רכיב מהסיידבר
+  // טיפול בשחרור רכיב מהסיידבר
   const handleSidebarDrop = useCallback((dropIndex) => {
     console.log('שחרור רכיב במיקום:', dropIndex);
     const dragDataStr = window.localStorage.getItem('dragData');
@@ -471,7 +497,7 @@ export function EditorProvider({ children }) {
     handleDragEnd();
   }, [draggedItem, addSection, handleDragEnd, showToast]);
 
-  // פונקציה לטיפול בהתחלת גרירת סקשן קיים
+  // טיפול בהתחלת גרירת סקשן קיים
   const handleSectionDragStart = useCallback((e, sectionId, index) => {
     console.log('התחלת גרירת סקשן קיים:', sectionId, 'ממיקום', index);
     dragInfo.current = {
@@ -508,7 +534,7 @@ export function EditorProvider({ children }) {
     document.addEventListener('dragover', updateDragImagePosition);
   }, [sections, updateDragImagePosition]);
 
-  // פונקציה לטיפול בשחרור סקשן לאחר גרירה
+  // טיפול בשחרור סקשן לאחר גרירה
   const handleSectionDrop = useCallback((dropIndex) => {
     console.log('שחרור סקשן במיקום:', dropIndex);
     const dragDataStr = window.localStorage.getItem('dragData');
@@ -531,7 +557,7 @@ export function EditorProvider({ children }) {
     handleDragEnd();
   }, [reorderSections, handleDragEnd]);
 
-  // פונקציה לסימון מיקום השחרור הפוטנציאלי בעת גרירה
+  // סימון מיקום השחרור הפוטנציאלי בעת גרירה
   const updateDropIndicator = useCallback((clientY) => {
     const dropZones = document.querySelectorAll('.drop-zone');
     if (dropZones.length > 0) {
@@ -550,12 +576,12 @@ export function EditorProvider({ children }) {
     }
   }, []);
 
-  // תיקון בחלק זה - השתנה מ-setActiveDropZoneIndex ל-setDropIndicatorIndex
+  // תיקון: שימוש ב-setDropIndicatorIndex (למעקב אחרי האזור) בעת סיום גרירה
   useEffect(() => {
     const handleGlobalDragEnd = () => {
       console.log('אירוע dragend גלובלי - ניקוי מצב גרירה');
       setIsDragging(false);
-      setDropIndicatorIndex(null); // פה היה השינוי העיקרי
+      setDropIndicatorIndex(null);
       localStorage.removeItem('dragData');
     };
     document.addEventListener('dragend', handleGlobalDragEnd);
@@ -604,24 +630,6 @@ export function EditorProvider({ children }) {
       setIsLoading(false);
     }
   }, [sections, storeData, showToast]);
-  
-  function getSectionName(type) {
-    const sectionNames = {
-      'hero': 'כותרת ראשית',
-      'banner': 'באנר',
-      'text-image': 'טקסט ותמונה',
-      'products': 'מוצרים',
-      'testimonials': 'המלצות',
-      'collections': 'קטגוריות',
-      'newsletter': 'ניוזלטר',
-      'row': 'שורת עמודות',
-      'button': 'כפתור',
-      'image': 'תמונה',
-      'text': 'טקסט',
-      'video': 'וידאו'
-    };
-    return sectionNames[type] || type;
-  }
 
   const loadLayout = useCallback(async () => {
     try {
@@ -645,34 +653,24 @@ export function EditorProvider({ children }) {
     }
   }, [showToast]);
 
-  const uploadImage = useCallback(async (file) => {
-    try {
-      if (!window.SERVER_DATA?.storeId) {
-        throw new Error('No store ID provided');
-      }
-      const result = await builderService.uploadImage(window.SERVER_DATA.storeId, file);
-      return result.url;
-    } catch (error) {
-      console.error('Upload error:', error);
-      showToast(`שגיאה בהעלאת תמונה: ${error.message}`, 'error');
-      throw error;
-    }
-  }, [showToast]);
-  
-  const deleteImage = useCallback(async (imageUrl) => {
-    try {
-      if (!window.SERVER_DATA?.storeId) {
-        throw new Error('No store ID provided');
-      }
-      await builderService.deleteImage(window.SERVER_DATA.storeId, imageUrl);
-      return true;
-    } catch (error) {
-      console.error('Delete image error:', error);
-      showToast(`שגיאה במחיקת תמונה: ${error.message}`, 'error');
-      throw error;
-    }
-  }, [showToast]);
-  
+  function getSectionName(type) {
+    const sectionNames = {
+      hero: 'כותרת ראשית',
+      banner: 'באנר',
+      'text-image': 'טקסט ותמונה',
+      products: 'מוצרים',
+      testimonials: 'המלצות',
+      collections: 'קטגוריות',
+      newsletter: 'ניוזלטר',
+      row: 'שורת עמודות',
+      button: 'כפתור',
+      image: 'תמונה',
+      text: 'טקסט',
+      video: 'וידאו'
+    };
+    return sectionNames[type] || type;
+  }
+
   const value = {
     sections,
     selectedSection,
@@ -698,7 +696,6 @@ export function EditorProvider({ children }) {
     undo,
     redo,
     handleSidebarDragStart,
-    handleSidebarDragStart,
     handleSidebarDrop,
     handleSectionDragStart,
     handleSectionDrop,
@@ -717,3 +714,5 @@ export function EditorProvider({ children }) {
     </EditorContext.Provider>
   );
 }
+
+export default EditorContext;

@@ -1,5 +1,6 @@
 import React from 'react';
 
+
 const ButtonSection = ({ data }) => {
   const { 
     title,
@@ -53,6 +54,12 @@ const ButtonSection = ({ data }) => {
     hoverScale = 1.05
   } = data;
 
+  // הדפסת לוג של הנתונים - מאפשר לדיבג את הערכים של המרווחים
+  console.log("Button Section Props:", { 
+    marginTop, marginRight, marginBottom, marginLeft,
+    paddingTop, paddingRight, paddingBottom, paddingLeft 
+  });
+
   // מיפוי גודל הכפתור
   const buttonSizeMap = {
     small: {
@@ -70,11 +77,14 @@ const ButtonSection = ({ data }) => {
   };
 
   // סגנונות לקונטיינר
+  // שימו לב: הערכים יכולים להיות ריקים, אז אנחנו מטפלים בכך
   const containerStyle = {
-    marginTop: marginTop || '',
-    marginRight: marginRight || '',
-    marginBottom: marginBottom || '',
-    marginLeft: marginLeft || '',
+    // מרווחים חיצוניים - תומך גם בערכים ריקים
+    marginTop: marginTop || '0px',
+    marginRight: marginRight || '0px',
+    marginBottom: marginBottom || '0px',
+    marginLeft: marginLeft || '0px',
+    // מרווחים פנימיים - אם אין ערך, משתמש בברירת מחדל
     paddingTop: paddingTop || '20px',
     paddingRight: paddingRight || '30px',
     paddingBottom: paddingBottom || '20px',
@@ -183,7 +193,7 @@ const ButtonSection = ({ data }) => {
   };
 
   return (
-    <div className="button-section" style={containerStyle}>
+    <div className="button-section" style={containerStyle} data-margins-applied="true">
       {title && <h2 className="section-title" style={titleStyle}>{title}</h2>}
       
       <div className="button-container">

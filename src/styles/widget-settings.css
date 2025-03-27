@@ -1,0 +1,271 @@
+/* src/styles/widget-settings.css */
+/* סגנונות לטאב הגדרות */
+.widget-settings-tab {
+    padding: 10px 0;
+  }
+  
+  /* כותרות קטגוריות */
+  .property-group {
+    margin-bottom: 16px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .section-header:hover {
+    background-color: #f7f7f7;
+  }
+  
+  .section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .toggle-indicator {
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .section-content {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+  
+  /* שורות הגדרות */
+  .property-row {
+    margin-bottom: 12px;
+  }
+  
+  .property-row label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #555;
+  }
+  
+  /* תיבות טקסט וסלקטים */
+  .text-input,
+  .select-input,
+  .number-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  /* צ'קבוקסים - עם תמיכה משופרת ב-RTL */
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-right: 30px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+  }
+  
+  .checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+  
+  .checkmark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .checkbox-container:hover input ~ .checkmark {
+    background-color: #f7f7f7;
+  }
+  
+  .checkbox-container input:checked ~ .checkmark {
+    background-color: #5271ff;
+    border-color: #5271ff;
+  }
+  
+  .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  
+  .checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+  }
+  
+  .checkbox-container .checkmark:after {
+    right: 6px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  
+  /* טקסט הצ'קבוקס */
+  .checkbox-label {
+    margin-right: 10px;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* הגדרות נראות במכשירים */
+  .device-visibility-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .device-option {
+    display: flex;
+    align-items: center;
+  }
+  
+  /* הגדרות מרווחים */
+  .spacing-container h4 {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #444;
+  }
+  
+  .spacing-controls {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .spacing-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    
+  }
+  .spacing-row{
+    display: grid
+    ;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+  
+  
+  .spacing-field {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .spacing-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+  }
+  
+  .spacing-field label {
+    display: block;
+    font-size: 11px;
+    margin-top: 4px;
+    color: #666;
+  }
+  
+/* כפתורי פעולות (לא קשור ישירות לסוויץ', אבל השארתי לפי הדוגמה) */
+.property-actions {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+/* מעטפת הסוויץ' + התווית */
+.switch-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* רווח קטן בין הטקסט לסוויץ' */
+  background: #f8f9fb;
+  border: 1px solid #ddd; 
+  border-radius: 4px; 
+   padding: 4px;
+   margin-bottom: 20px;
+}
+
+/* מעטפת הכפתור עצמו */
+.switch {
+  position: absolute;
+  width: 0px !important;
+  height: 20px;
+  left: 0;
+  
+}
+
+/* מסתירים את הצ'קבוקס הקלאסי */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+  
+}
+
+/* פס הרקע של הסוויץ' */
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;   /* צבע רקע במצב לא מסומן */
+  transition: .4s;
+  border-radius: 20px;
+  
+}
+
+/* העיגול הקטן שמחליק */
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+
+  background-color: rgb(109, 109, 109);
+  transition: .4s;
+  border-radius: 50%;
+}
+
+/* כשהצ'קבוקס מסומן – צבע רקע ושינוי מיקום העיגול */
+input:checked + .switch-slider {
+  background-color: #2196F3; /* צבע רקע במצב מסומן */
+  
+}
+
+/* מזיזים את העיגול ימינה במקום שמאלה */
+input:checked + .switch-slider:before {
+  transform: translateX(20px); /* או 20px בהתאם להעדפה */
+  background-color: #7536ff; /* צבע העיגול */
+}

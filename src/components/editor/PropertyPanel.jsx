@@ -8,7 +8,9 @@ import SwitchControl from './controls/SwitchControl';
 import SelectControl from './controls/SelectControl';
 import ProductPicker from './controls/ProductPicker';
 import CategoryPicker from './controls/CategoryPicker';
+import WidgetSettingsTab from './controls/WidgetSettingsTab';
 import productService from '../../api/productService';
+import WidgetSettingsWrapper from './controls/WidgetSettingsWrapper';
 
 // Import common controls
 import { 
@@ -22,17 +24,18 @@ import {
 const PropertyPanel = () => {
   // משתמשים בפונקציות החדשות
   const { 
-  selectedSection, 
-  updateSection, 
-  deleteSection, 
-  findSelectedWidget, 
-  updateWidgetInColumn, 
-  deleteWidgetFromColumn,
-  selectedWidgetInfo,
-  selectedSectionId
-} = useEditor();
+    selectedSection, 
+    updateSection, 
+    deleteSection, 
+    findSelectedWidget, 
+    updateWidgetInColumn, 
+    deleteWidgetFromColumn,
+    selectedWidgetInfo,
+    selectedSectionId,
+    sections  // הוספת sections
+  } = useEditor();
 
-  const [activeTab, setActiveTab] = useState('content'); // 'content', 'style', 'settings'
+  const [activeTab, setActiveTab] = useState('content');
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const [loadingProductDetails, setLoadingProductDetails] = useState(false);
@@ -40,9 +43,16 @@ const PropertyPanel = () => {
 
   // בדיקה אם מדובר בווידג'ט בתוך עמודה
   const selectedWidget = findSelectedWidget(); 
+  
+  // חדש: בדיקה האם ה-ID הנבחר הוא של סקשן עיקרי
+  const isMainSection = sections.some(section => section.id === selectedSectionId);
+  
+  // אם זה סקשן עיקרי, נתעלם מהווידג'ט
+  const effectiveWidget = isMainSection ? null : selectedWidget;
   console.log('PropertyPanel - selectedSectionId:', selectedSectionId);
   console.log('PropertyPanel - selectedWidget:', selectedWidget);
   console.log('PropertyPanel - selectedWidgetInfo:', selectedWidgetInfo);
+
   // פונקציה מעודכנת לטיפול בשינויים עבור ווידג'טים ועמודות
   const handleChange = (field, value) => {
     if (selectedWidget) {
@@ -56,9 +66,7 @@ const PropertyPanel = () => {
     }
   };
 
-
   // פונקציה מעודכנת למחיקה עבור ווידג'טים ועמודות
-  // פונקציה מעודכנת למחיקה
   const handleDelete = () => {
     if (selectedWidget) {
       // מחיקת ווידג'ט מעמודה
@@ -89,14 +97,13 @@ const PropertyPanel = () => {
 
   // שינוי בכותרת ה-panel
   const getItemTitle = () => {
-    if (selectedWidget) {
-      return `ווידג'ט ${getSectionName(selectedWidget.type)}`;
+    if (effectiveWidget) {
+      return `ווידג'ט ${getSectionName(effectiveWidget.type)}`;
     } else if (selectedSection) {
       return getSectionName(selectedSection.type);
     }
     return "הגדרות";
   };
-
 
   // פונקציות עזר למידע על מחירי מוצרים ועיבוד וריאציות (נשארו ללא שינוי)
   const getFullProductImageUrl = (imageUrl) => {
@@ -432,30 +439,6 @@ const PropertyPanel = () => {
               />
             </div>
             <div className="property-group">
-              <label className="property-label">סגנון</label>
-              <SelectControl
-                options={[
-                  { value: 'filled', label: 'מלא' },
-                  { value: 'outline', label: 'מתאר' },
-                  { value: 'link', label: 'קישור' }
-                ]}
-                value={selectedSection.buttonStyle || 'filled'}
-                onChange={(value) => handleChange('buttonStyle', value)}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">גודל</label>
-              <SelectControl
-                options={[
-                  { value: 'small', label: 'קטן' },
-                  { value: 'medium', label: 'בינוני' },
-                  { value: 'large', label: 'גדול' }
-                ]}
-                value={selectedSection.buttonSize || 'medium'}
-                onChange={(value) => handleChange('buttonSize', value)}
-              />
-            </div>
-            <div className="property-group">
               <label className="property-label">פתיחה בחלון חדש</label>
               <SwitchControl
                 checked={selectedSection.openInNewTab === true}
@@ -515,15 +498,6 @@ const PropertyPanel = () => {
                 onChange={(value) => handleChange('alignment', value)}
               />
             </div>
-            <div className="property-group">
-              <label className="property-label">רוחב (פיקסלים)</label>
-              <RangeSlider
-                min={50}
-                max={1200}
-                value={selectedSection.imageWidth || 400}
-                onChange={(value) => handleChange('imageWidth', value)}
-              />
-            </div>
           </>
         );
       case 'text':
@@ -558,15 +532,6 @@ const PropertyPanel = () => {
                 ]}
                 value={selectedSection.alignment || 'right'}
                 onChange={(value) => handleChange('alignment', value)}
-              />
-            </div>
-            <div className="property-group">
-              <label className="property-label">רוחב מקסימלי</label>
-              <RangeSlider
-                min={200}
-                max={1200}
-                value={selectedSection.maxWidth || 1000}
-                onChange={(value) => handleChange('maxWidth', value)}
               />
             </div>
             <div className="property-group">
@@ -1638,6 +1603,219 @@ const PropertyPanel = () => {
               />
             </div>
             <div className="property-group">
+              <label className="property-label">פתיחה בחלון חדש</label>
+              <SwitchControl
+                checked={widget.openInNewTab === true}
+                onChange={(checked) => handleChange('openInNewTab', checked)}
+              />
+            </div>
+          </>
+        );
+      case 'text':
+        return (
+          <>
+            <div className="property-group">
+              <label className="property-label">כותרת</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.title || ''}
+                onChange={(e) => handleChange('title', e.target.value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">תוכן</label>
+              <textarea
+                className="textarea-input"
+                value={widget.content || ''}
+                onChange={(e) => handleChange('content', e.target.value)}
+                rows={6}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">יישור</label>
+              <SelectControl
+                options={[
+                  { value: 'right', label: 'ימין' },
+                  { value: 'center', label: 'מרכז' },
+                  { value: 'left', label: 'שמאל' },
+                  { value: 'justify', label: 'מיושר לשני הצדדים' }
+                ]}
+                value={widget.alignment || 'right'}
+                onChange={(value) => handleChange('alignment', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">אות פתיחה גדולה (Drop Cap)</label>
+              <SwitchControl
+                checked={widget.dropCap === true}
+                onChange={(checked) => handleChange('dropCap', checked)}
+              />
+            </div>
+          </>
+        );
+      case 'video':
+        return (
+          <>
+            <div className="property-group">
+              <label className="property-label">כותרת</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.title || ''}
+                onChange={(e) => handleChange('title', e.target.value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">סוג וידאו</label>
+              <SelectControl
+                options={[
+                  { value: 'youtube', label: 'YouTube' },
+                  { value: 'vimeo', label: 'Vimeo' },
+                  { value: 'custom', label: 'מותאם אישית' }
+                ]}
+                value={widget.videoType || 'youtube'}
+                onChange={(value) => handleChange('videoType', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">כתובת URL לוידאו</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.videoUrl || ''}
+                onChange={(e) => handleChange('videoUrl', e.target.value)}
+                placeholder={widget.videoType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 
+                            widget.videoType === 'vimeo' ? 'https://vimeo.com/...' : 
+                            'הכנס כתובת לקובץ וידאו'}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">יחס גובה-רוחב</label>
+              <SelectControl
+                options={[
+                  { value: '16:9', label: '16:9 (מלבני)' },
+                  { value: '4:3', label: '4:3 (רגיל)' },
+                  { value: '1:1', label: '1:1 (מרובע)' }
+                ]}
+                value={widget.aspectRatio || '16:9'}
+                onChange={(value) => handleChange('aspectRatio', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">כיתוב</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.caption || ''}
+                onChange={(e) => handleChange('caption', e.target.value)}
+                placeholder="כיתוב מתחת לוידאו (אופציונלי)"
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">הגדרות נגינה</label>
+              <div className="checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={widget.autoplay === true}
+                    onChange={(e) => handleChange('autoplay', e.target.checked)}
+                  />
+                  ניגון אוטומטי
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={widget.controls !== false}
+                    onChange={(e) => handleChange('controls', e.target.checked)}
+                  />
+                  הצג פקדי שליטה
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={widget.loop === true}
+                    onChange={(e) => handleChange('loop', e.target.checked)}
+                  />
+                  ניגון בלולאה
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={widget.muted !== false}
+                    onChange={(e) => handleChange('muted', e.target.checked)}
+                  />
+                  השתק (מומלץ לניגון אוטומטי)
+                </label>
+              </div>
+            </div>
+          </>
+        );
+      case 'image':
+        return (
+          <>
+            <div className="property-group">
+              <label className="property-label">כותרת</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.title || ''}
+                onChange={(e) => handleChange('title', e.target.value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">בחירת תמונה</label>
+              <ImagePicker
+                value={widget.image || ''}
+                onChange={(value) => handleChange('image', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">טקסט חלופי (alt)</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.altText || ''}
+                onChange={(e) => handleChange('altText', e.target.value)}
+                placeholder="תיאור התמונה לנגישות"
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">קישור</label>
+              <input
+                type="text"
+                className="text-input"
+                value={widget.linkUrl || ''}
+                onChange={(e) => handleChange('linkUrl', e.target.value)}
+                placeholder="הוסף URL לקישור (אופציונלי)"
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">יישור</label>
+              <SelectControl
+                options={[
+                  { value: 'right', label: 'ימין' },
+                  { value: 'center', label: 'מרכז' },
+                  { value: 'left', label: 'שמאל' }
+                ]}
+                value={widget.alignment || 'center'}
+                onChange={(value) => handleChange('alignment', value)}
+              />
+            </div>
+          </>
+        );
+      default:
+        return <div>אין הגדרות תוכן זמינות עבור ווידג'ט זה</div>;
+    }
+  };
+
+  const renderWidgetStyleTab = (widget) => {
+    switch (widget.type) {
+      case 'button':
+        return (
+          <>
+            <div className="property-group-title">עיצוב כפתור</div>
+            <div className="property-group">
               <label className="property-label">סגנון</label>
               <SelectControl
                 options={[
@@ -1662,10 +1840,33 @@ const PropertyPanel = () => {
               />
             </div>
             <div className="property-group">
-              <label className="property-label">פתיחה בחלון חדש</label>
+              <label className="property-label">צבע רקע כפתור</label>
+              <ColorPicker
+                value={widget.buttonColor || '#5271ff'}
+                onChange={(value) => handleChange('buttonColor', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">צבע טקסט</label>
+              <ColorPicker
+                value={widget.buttonTextColor || '#ffffff'}
+                onChange={(value) => handleChange('buttonTextColor', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">רדיוס פינות</label>
+              <RangeSlider
+                min={0}
+                max={20}
+                value={widget.buttonBorderRadius || 4}
+                onChange={(value) => handleChange('buttonBorderRadius', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">צל</label>
               <SwitchControl
-                checked={widget.openInNewTab === true}
-                onChange={(checked) => handleChange('openInNewTab', checked)}
+                checked={widget.shadow === true}
+                onChange={(checked) => handleChange('shadow', checked)}
               />
             </div>
             {widget.shadow && (
@@ -1706,12 +1907,97 @@ const PropertyPanel = () => {
                 />
               </div>
             )}
+            <div className="property-group">
+              <label className="property-label">אפקט מעבר עכבר</label>
+              <SelectControl
+                options={[
+                  { value: 'none', label: 'ללא' },
+                  { value: 'lighten', label: 'הבהרה' },
+                  { value: 'darken', label: 'הכהייה' },
+                  { value: 'scale', label: 'הגדלה' },
+                  { value: 'shadow', label: 'צל מוגבר' }
+                ]}
+                value={widget.hoverEffect || 'none'}
+                onChange={(value) => handleChange('hoverEffect', value)}
+              />
+            </div>
           </>
         );
       case 'text':
         return (
           <>
-            <div className="property-group-title">עיצוב</div>
+            <div className="property-group-title">טיפוגרפיה</div>
+            <div className="property-group">
+              <div className="collapsible-panel">
+                <div 
+                  className="collapsible-header"
+                  onClick={(e) => {
+                    e.currentTarget.closest('.collapsible-panel').classList.toggle('open');
+                  }}
+                >
+                  <span>הגדרות כותרת</span>
+                  <div className="toggle-button">
+                    <FiChevronDown />
+                  </div>
+                </div>
+                <div className="collapsible-content">
+                  <TypographyControl
+                    values={{
+                      fontFamily: widget.titleFontFamily || "'Noto Sans Hebrew', sans-serif",
+                      fontSize: widget.titleFontSize || 22,
+                      fontWeight: widget.titleFontWeight || "bold",
+                      fontStyle: widget.titleFontStyle || "normal",
+                      textDecoration: widget.titleTextDecoration || "none",
+                      textTransform: widget.titleTextTransform || "none",
+                      lineHeight: widget.titleLineHeight || 1.2,
+                      letterSpacing: widget.titleLetterSpacing || 0
+                    }}
+                    onChange={(newValues) => {
+                      Object.entries(newValues).forEach(([key, value]) => {
+                        handleChange(`title${key.charAt(0).toUpperCase() + key.slice(1)}`, value);
+                      });
+                    }}
+                    title="כותרת"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="property-group">
+              <div className="collapsible-panel">
+                <div 
+                  className="collapsible-header"
+                  onClick={(e) => {
+                    e.currentTarget.closest('.collapsible-panel').classList.toggle('open');
+                  }}
+                >
+                  <span>הגדרות טקסט</span>
+                  <div className="toggle-button">
+                    <FiChevronDown />
+                  </div>
+                </div>
+                <div className="collapsible-content">
+                  <TypographyControl
+                    values={{
+                      fontFamily: widget.contentFontFamily || "'Noto Sans Hebrew', sans-serif",
+                      fontSize: widget.contentFontSize || 16,
+                      fontWeight: widget.contentFontWeight || "normal",
+                      fontStyle: widget.contentFontStyle || "normal",
+                      textDecoration: widget.contentTextDecoration || "none",
+                      textTransform: widget.contentTextTransform || "none",
+                      lineHeight: widget.contentLineHeight || 1.6,
+                      letterSpacing: widget.contentLetterSpacing || 0
+                    }}
+                    onChange={(newValues) => {
+                      Object.entries(newValues).forEach(([key, value]) => {
+                        handleChange(`content${key.charAt(0).toUpperCase() + key.slice(1)}`, value);
+                      });
+                    }}
+                    title="טקסט"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="property-group-title">צבעים</div>
             <div className="property-group">
               <label className="property-label">צבע כותרת</label>
               <ColorPicker
@@ -1778,10 +2064,97 @@ const PropertyPanel = () => {
             </div>
           </>
         );
+      case 'image':
+        return (
+          <>
+            <div className="property-group-title">עיצוב תמונה</div>
+            <div className="property-group">
+              <label className="property-label">רוחב (פיקסלים)</label>
+              <RangeSlider
+                min={50}
+                max={1200}
+                value={widget.imageWidth || 400}
+                onChange={(value) => handleChange('imageWidth', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">רדיוס פינות</label>
+              <RangeSlider
+                min={0}
+                max={50}
+                value={widget.borderRadius || 0}
+                onChange={(value) => handleChange('borderRadius', value)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">אטימות</label>
+              <RangeSlider
+                min={0}
+                max={100}
+                value={(widget.opacity || 1) * 100}
+                onChange={(value) => handleChange('opacity', value / 100)}
+              />
+            </div>
+            <div className="property-group">
+              <label className="property-label">צל</label>
+              <SwitchControl
+                checked={widget.shadow === true}
+                onChange={(checked) => handleChange('shadow', checked)}
+              />
+            </div>
+            {widget.shadow && (
+              <>
+                <div className="property-group">
+                  <label className="property-label">צבע צל</label>
+                  <ColorPicker
+                    value={widget.shadowColor || 'rgba(0, 0, 0, 0.2)'}
+                    onChange={(value) => handleChange('shadowColor', value)}
+                  />
+                </div>
+                <div className="property-group">
+                  <label className="property-label">עוצמת טשטוש</label>
+                  <RangeSlider
+                    min={0}
+                    max={50}
+                    value={widget.shadowBlur || 10}
+                    onChange={(value) => handleChange('shadowBlur', value)}
+                  />
+                </div>
+              </>
+            )}
+            <div className="property-group">
+              <label className="property-label">הגדלה בהצבעה</label>
+              <SwitchControl
+                checked={widget.hoverZoom === true}
+                onChange={(checked) => handleChange('hoverZoom', checked)}
+              />
+            </div>
+            {widget.hoverZoom && (
+              <div className="property-group">
+                <label className="property-label">מידת הגדלה</label>
+                <RangeSlider
+                  min={101}
+                  max={150}
+                  value={(widget.zoomLevel || 1.05) * 100}
+                  onChange={(value) => handleChange('zoomLevel', value / 100)}
+                />
+              </div>
+            )}
+          </>
+        );
       case 'video':
         return (
           <>
             <div className="property-group-title">עיצוב וידאו</div>
+            <div className="property-group">
+              <label className="property-label">רוחב מקסימלי</label>
+              <RangeSlider
+                min={200}
+                max={1200}
+                value={widget.maxWidth || 800}
+                onChange={(value) => handleChange('maxWidth', value)}
+              />
+            </div>
             <div className="property-group">
               <label className="property-label">רדיוס פינות</label>
               <RangeSlider
@@ -1820,7 +2193,7 @@ const PropertyPanel = () => {
         return <div>אין הגדרות עיצוב זמינות עבור ווידג'ט זה</div>;
     }
   };
-
+   
   // פונקציה חדשה לרינדור טאב Settings עבור ווידג'טים
   const renderWidgetSettingsTab = (widget) => {
     return (
@@ -1878,25 +2251,34 @@ const PropertyPanel = () => {
   // עדכון פונקציית renderTabContent בהתאם לווידג'ט או סקשן
   const renderTabContent = () => {
     if (activeTab === 'content') {
-      if (selectedWidget) {
-        return renderWidgetContentTab(selectedWidget);
+      if (effectiveWidget) {
+        return renderWidgetContentTab(effectiveWidget);
       } else {
         return renderContentTab();
       }
     } else if (activeTab === 'style') {
-      if (selectedWidget) {
-        return renderWidgetContentTab(selectedWidget); // במידה ואין הגדרות עיצוב שונות לווידג'ט, אפשר להשתמש בלוגיקה דומה
+      if (effectiveWidget) {
+        return renderWidgetStyleTab(effectiveWidget);
       } else {
         return renderStyleTab();
       }
     } else if (activeTab === 'settings') {
-      if (selectedWidget) {
-        return renderWidgetSettingsTab(selectedWidget);
+      if (effectiveWidget) {
+        // שימוש בקומפוננט החדש עם העברת פונקציית המחיקה
+        return (
+          <WidgetSettingsWrapper
+            widgetType={effectiveWidget.type}
+            widgetData={effectiveWidget}
+            onUpdate={(updatedData) => updateWidgetInColumn(effectiveWidget.id, updatedData)}
+            onDelete={handleDelete}
+          />
+        );
       } else {
         return renderSettingsTab();
       }
     }
   };
+  
 
   // פונקציה לרינדור הטאבים (נשארה ללא שינוי)
   const renderTabs = () => {

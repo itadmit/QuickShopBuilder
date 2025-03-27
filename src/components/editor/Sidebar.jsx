@@ -3,6 +3,7 @@ import React from 'react';
 import { useEditor } from '../../contexts/EditorContext';
 import { FiLayout, FiImage, FiGrid, FiType, FiMessageSquare, FiList, FiColumns, FiMail, FiVideo, FiBox, FiFileText} from 'react-icons/fi';
 
+
 // רכיב פריט גרירה משופר
 const DraggableItem = ({ component, icon }) => {
   const { addSection, setIsDragging } = useEditor();

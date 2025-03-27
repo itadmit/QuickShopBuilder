@@ -2,12 +2,33 @@ import React from 'react';
 import RangeSlider from './RangeSlider';
 import ColorPicker from './ColorPicker';
 import SwitchControl from './SwitchControl';
+import Checkbox from './Checkbox';  // הוספת ייבוא של קומפוננט הצ'קבוקס
+import { FiMonitor, FiTablet, FiSmartphone } from 'react-icons/fi';  // ייבוא של אייקונים
 
 // Component for spacing control (margin/padding)
 export const SpacingControl = ({ type, values, onChange }) => {
+  // פונקציה להסרת יחידת מידה מערך להצגה בקלט
+  const removeUnit = (value) => {
+    if (!value) return '';
+    if (typeof value === 'number') return value.toString();
+    return String(value).replace(/px|%|em|rem|vh|vw/g, '');
+  };
+  
+  // פונקציה להוספת יחידת מידה בעת עדכון
+  const addUnitIfNeeded = (value) => {
+    if (!value) return '';
+    if (typeof value === 'number') return `${value}px`;
+    if (String(value).match(/^[0-9]+$/)) return `${value}px`;
+    
+    // אם יש כבר יחידת מידה, לא מוסיפים
+    if (String(value).match(/px|%|em|rem|vh|vw/)) return value;
+    
+    return `${value}px`;
+  };
+
   const handleChange = (position, value) => {
     const newValues = { ...values };
-    newValues[position] = value;
+    newValues[position] = addUnitIfNeeded(value);
     onChange(newValues);
   };
 
@@ -18,36 +39,48 @@ export const SpacingControl = ({ type, values, onChange }) => {
         <div className="spacing-row">
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="spacing-input"
-            value={values.top || ''}
+            value={removeUnit(values.top || '')}
             onChange={(e) => handleChange('top', e.target.value)}
+            placeholder="0"
           />
           <span className="spacing-label">למעלה</span>
         </div>
         <div className="spacing-row">
           <input
-            type="text" 
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="spacing-input"
-            value={values.right || ''}
+            value={removeUnit(values.right || '')}
             onChange={(e) => handleChange('right', e.target.value)}
+            placeholder="0"
           />
           <span className="spacing-label">ימין</span>
         </div>
         <div className="spacing-row">
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="spacing-input"
-            value={values.bottom || ''}
+            value={removeUnit(values.bottom || '')}
             onChange={(e) => handleChange('bottom', e.target.value)}
+            placeholder="0"
           />
           <span className="spacing-label">למטה</span>
         </div>
         <div className="spacing-row">
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="spacing-input"
-            value={values.left || ''}
+            value={removeUnit(values.left || '')}
             onChange={(e) => handleChange('left', e.target.value)}
+            placeholder="0"
           />
           <span className="spacing-label">שמאל</span>
         </div>
@@ -56,22 +89,38 @@ export const SpacingControl = ({ type, values, onChange }) => {
   );
 };
 
+
 // Component for device visibility settings
 export const DeviceVisibilityControl = ({ values, onChange }) => {
   return (
     <div className="device-visibility">
-      <SwitchControl
-        label="הצג במחשב"
+      <Checkbox
+        label={
+          <>
+            <FiMonitor size={16} style={{ marginLeft: '5px' }} />
+            הצג במחשב
+          </>
+        }
         checked={values.showOnDesktop !== false}
         onChange={(checked) => onChange({...values, showOnDesktop: checked})}
       />
-      <SwitchControl
-        label="הצג בטאבלט"
+      <Checkbox
+        label={
+          <>
+            <FiTablet size={16} style={{ marginLeft: '5px' }} />
+            הצג בטאבלט
+          </>
+        }
         checked={values.showOnTablet !== false}
         onChange={(checked) => onChange({...values, showOnTablet: checked})}
       />
-      <SwitchControl
-        label="הצג במובייל"
+      <Checkbox
+        label={
+          <>
+            <FiSmartphone size={16} style={{ marginLeft: '5px' }} />
+            הצג במובייל
+          </>
+        }
         checked={values.showOnMobile !== false}
         onChange={(checked) => onChange({...values, showOnMobile: checked})}
       />
